@@ -661,8 +661,9 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
 <script>
-
     const API_BASE_URL = `${window.location.origin}/api`;
+    const API_AUTH = `${API_BASE_URL}/auth`;
+    const API_ESTUDIANTES = `${API_BASE_URL}/estudiantes`;
     let token = localStorage.getItem('token');
     let estudianteId = new URLSearchParams(window.location.search).get('id');
 
@@ -677,16 +678,10 @@
 
     async function verificarAutenticacion() {
         try {
-            const response = await fetch(`${API_BASE}/auth/validate`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
+            const response = await fetch(`${API_AUTH}/validate`, {
+                headers: { 'Authorization': `Bearer ${token}` }
             });
-
-            if (!response.ok) {
-                throw new Error('Sesión inválida');
-            }
-
+            if (!response.ok) throw new Error('Sesión inválida');
             const data = await response.json();
             if (data.valido) {
                 document.getElementById('nombreUsuario').textContent = data.usuario.nombre;
@@ -694,11 +689,8 @@
                     mostrarToast('No tienes permisos para acceder a esta página', 'danger');
                     setTimeout(() => window.location.href = 'login.html', 2000);
                 }
-            } else {
-                window.location.href = 'login.html';
-            }
-        } catch (error) {
-            console.error('Error validando sesión:', error);
+            } else window.location.href = 'login.html';
+        } catch {
             window.location.href = 'login.html';
         }
     }
@@ -708,31 +700,18 @@
             mostrarToast('ID de estudiante no proporcionado', 'danger');
             return;
         }
-
         try {
             document.getElementById('loading').style.display = 'block';
             document.getElementById('detalleContent').style.display = 'none';
-
-            const response = await fetch(`${API_BASE}/estudiantes/${estudianteId}`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
+            const response = await fetch(`${API_ESTUDIANTES}/${estudianteId}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
             });
-
-            if (!response.ok) {
-                throw new Error('Error al cargar detalles del estudiante');
-            }
-
+            if (!response.ok) throw new Error('Error al cargar detalles del estudiante');
             const estudiante = await response.json();
-            console.log('Respuesta de la API:', estudiante);
-            console.log('Valor de añoAcademico:', estudiante.añoAcademico);
-            console.log('Claves del objeto estudiante:', Object.keys(estudiante));
             mostrarDetallesEstudiante(estudiante);
-
             document.getElementById('loading').style.display = 'none';
             document.getElementById('detalleContent').style.display = 'block';
-        } catch (error) {
-            console.error('Error:', error);
+        } catch {
             mostrarToast('Error al cargar los detalles del estudiante', 'danger');
         }
     }
@@ -742,26 +721,23 @@
             id: estudiante.id || '-',
             nombres: estudiante.nombres || estudiante.nombre || '-',
             apellidos: estudiante.apellidos || estudiante.apellido || '-',
-            tipoDocumento: estudiante.tipoDocumento || estudiante.tipo_documento || '-',
-            numeroDocumento: estudiante.numeroDocumento || estudiante.numero_documento || '-',
-            fechaNacimiento: estudiante.fechaNacimiento || estudiante.fecha_nacimiento || '-',
+            tipoDocumento: estudiante.tipoDocumento || '-',
+            numeroDocumento: estudiante.numeroDocumento || '-',
+            fechaNacimiento: estudiante.fechaNacimiento || '-',
             genero: estudiante.genero || '-',
             direccion: estudiante.direccion || '-',
             telefono: estudiante.telefono || '-',
             email: estudiante.email || '-',
-            gradoActual: estudiante.gradoActual || estudiante.grado_actual || '-',
-            seccionActual: estudiante.seccionActual || estudiante.seccion_actual || '-',
-            anioAcademico: estudiante.añoAcademico || estudiante.anioAcademico || estudiante.año_academico || estudiante.anio_academico || estudiante.xn_academico || '-',
-            estadoEstudiante: estudiante.estadoEstudiante || estudiante.estado_estudiante || '-',
-            nombreContactoEmergencia: estudiante.nombreContactoEmergencia || estudiante.nombre_contacto_emergencia || '-',
-            telefonoEmergencia: estudiante.telefonoEmergencia || estudiante.telefono_emergencia || '-',
+            gradoActual: estudiante.gradoActual || '-',
+            seccionActual: estudiante.seccionActual || '-',
+            anioAcademico: estudiante.añoAcademico || estudiante.anioAcademico || '-',
+            estadoEstudiante: estudiante.estadoEstudiante || '-',
+            nombreContactoEmergencia: estudiante.nombreContactoEmergencia || '-',
+            telefonoEmergencia: estudiante.telefonoEmergencia || '-',
             alergias: estudiante.alergias || '-',
-            condicionesMedicas: estudiante.condicionesMedicas || estudiante.condiciones_medicas || '-',
-            tipoSangre: estudiante.tipoSangre || estudiante.tipo_sangre || '-'
+            condicionesMedicas: estudiante.condicionesMedicas || '-',
+            tipoSangre: estudiante.tipoSangre || '-'
         };
-
-        console.log('Valor asignado a anioAcademico:', datos.anioAcademico);
-
         document.getElementById('detalleId').textContent = datos.id;
         document.getElementById('detalleNombres').textContent = datos.nombres;
         document.getElementById('detalleApellidos').textContent = datos.apellidos;
@@ -786,44 +762,36 @@
     }
 
     function abrirModalEditar() {
-        fetch(`${API_BASE}/estudiantes/${estudianteId}`, {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
+        fetch(`${API_ESTUDIANTES}/${estudianteId}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
         })
-        .then(response => {
-            if (!response.ok) throw new Error('Error al cargar datos del estudiante');
-            return response.json();
+        .then(r => {
+            if (!r.ok) throw new Error('Error al cargar datos del estudiante');
+            return r.json();
         })
         .then(estudiante => {
-
             document.getElementById('editarId').value = estudiante.id || '';
-            document.getElementById('editarNombres').value = estudiante.nombres || estudiante.nombre || '';
-            document.getElementById('editarApellidos').value = estudiante.apellidos || estudiante.apellido || '';
-            document.getElementById('editarTipoDocumento').value = estudiante.tipoDocumento || estudiante.tipo_documento || '';
-            document.getElementById('editarNumeroDocumento').value = estudiante.numeroDocumento || estudiante.numero_documento || '';
-            document.getElementById('editarFechaNacimiento').value = estudiante.fechaNacimiento || estudiante.fecha_nacimiento || '';
+            document.getElementById('editarNombres').value = estudiante.nombres || '';
+            document.getElementById('editarApellidos').value = estudiante.apellidos || '';
+            document.getElementById('editarTipoDocumento').value = estudiante.tipoDocumento || '';
+            document.getElementById('editarNumeroDocumento').value = estudiante.numeroDocumento || '';
+            document.getElementById('editarFechaNacimiento').value = estudiante.fechaNacimiento || '';
             document.getElementById('editarGenero').value = estudiante.genero || '';
             document.getElementById('editarDireccion').value = estudiante.direccion || '';
             document.getElementById('editarTelefono').value = estudiante.telefono || '';
             document.getElementById('editarEmail').value = estudiante.email || '';
-            document.getElementById('editarGradoActual').value = estudiante.gradoActual || estudiante.grado_actual || '';
-            document.getElementById('editarSeccionActual').value = estudiante.seccionActual || estudiante.seccion_actual || '';
-            document.getElementById('editarAnioAcademico').value = estudiante.añoAcademico || estudiante.anioAcademico || estudiante.año_academico || estudiante.anio_academico || '';
-            document.getElementById('editarEstadoEstudiante').value = estudiante.estadoEstudiante || estudiante.estado_estudiante || 'ACTIVO';
-            document.getElementById('editarNombreContactoEmergencia').value = estudiante.nombreContactoEmergencia || estudiante.nombre_contacto_emergencia || '';
-            document.getElementById('editarTelefonoEmergencia').value = estudiante.telefonoEmergencia || estudiante.telefono_emergencia || '';
+            document.getElementById('editarGradoActual').value = estudiante.gradoActual || '';
+            document.getElementById('editarSeccionActual').value = estudiante.seccionActual || '';
+            document.getElementById('editarAnioAcademico').value = estudiante.añoAcademico || estudiante.anioAcademico || '';
+            document.getElementById('editarEstadoEstudiante').value = estudiante.estadoEstudiante || 'ACTIVO';
+            document.getElementById('editarNombreContactoEmergencia').value = estudiante.nombreContactoEmergencia || '';
+            document.getElementById('editarTelefonoEmergencia').value = estudiante.telefonoEmergencia || '';
             document.getElementById('editarAlergias').value = estudiante.alergias || '';
-            document.getElementById('editarCondicionesMedicas').value = estudiante.condicionesMedicas || estudiante.condiciones_medicas || '';
-            document.getElementById('editarTipoSangre').value = estudiante.tipoSangre || estudiante.tipo_sangre || '';
-
-            const modal = new bootstrap.Modal(document.getElementById('modalEstudiante'));
-            modal.show();
+            document.getElementById('editarCondicionesMedicas').value = estudiante.condicionesMedicas || '';
+            document.getElementById('editarTipoSangre').value = estudiante.tipoSangre || '';
+            new bootstrap.Modal(document.getElementById('modalEstudiante')).show();
         })
-        .catch(error => {
-            console.error('Error:', error);
-            mostrarToast('Error al cargar datos para edición', 'danger');
-        });
+        .catch(() => mostrarToast('Error al cargar datos para edición', 'danger'));
     }
 
     async function guardarCambiosEstudiante() {
@@ -832,114 +800,57 @@
             form.reportValidity();
             return;
         }
-
-        let estudianteOriginal;
         try {
-            const responseOriginal = await fetch(`${API_BASE}/estudiantes/${estudianteId}`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
+            const responseOriginal = await fetch(`${API_ESTUDIANTES}/${estudianteId}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
             });
-
-            if (!responseOriginal.ok) {
-                throw new Error('Error al obtener datos del estudiante');
-            }
-
-            estudianteOriginal = await responseOriginal.json();
-        } catch (error) {
-            console.error('Error al obtener estudiante:', error);
-            mostrarToast('Error al cargar datos del estudiante', 'danger');
-            return;
-        }
-
-        const datos = {
-            nombres: document.getElementById('editarNombres').value.trim(),
-            apellidos: document.getElementById('editarApellidos').value.trim(),
-            tipoDocumento: document.getElementById('editarTipoDocumento').value,
-            numeroDocumento: document.getElementById('editarNumeroDocumento').value.trim(),
-            fechaNacimiento: document.getElementById('editarFechaNacimiento').value,
-            genero: document.getElementById('editarGenero').value,
-            apoderadoId: estudianteOriginal.apoderadoId || null,
-
-            direccion: document.getElementById('editarDireccion').value.trim() || null,
-            telefono: document.getElementById('editarTelefono').value.trim() || null,
-            email: document.getElementById('editarEmail').value.trim() || null,
-            nombreContactoEmergencia: document.getElementById('editarNombreContactoEmergencia').value.trim() || null,
-            telefonoEmergencia: document.getElementById('editarTelefonoEmergencia').value.trim() || null,
-            alergias: document.getElementById('editarAlergias').value.trim() || null,
-            condicionesMedicas: document.getElementById('editarCondicionesMedicas').value.trim() || null,
-            tipoSangre: document.getElementById('editarTipoSangre').value || null,
-
-            gradoActual: estudianteOriginal.gradoActual || null,
-            seccionActual: document.getElementById('editarSeccionActual').value.trim() || estudianteOriginal.seccionActual || null,
-            añoAcademico: estudianteOriginal.añoAcademico || estudianteOriginal.anioAcademico || null
-        };
-
-        console.log('Datos a enviar:', datos);
-
-        try {
-            const response = await fetch(`${API_BASE}/estudiantes/${estudianteId}`, {
+            if (!responseOriginal.ok) throw new Error('Error al obtener datos del estudiante');
+            const estudianteOriginal = await responseOriginal.json();
+            const datos = {
+                nombres: document.getElementById('editarNombres').value.trim(),
+                apellidos: document.getElementById('editarApellidos').value.trim(),
+                tipoDocumento: document.getElementById('editarTipoDocumento').value,
+                numeroDocumento: document.getElementById('editarNumeroDocumento').value.trim(),
+                fechaNacimiento: document.getElementById('editarFechaNacimiento').value,
+                genero: document.getElementById('editarGenero').value,
+                apoderadoId: estudianteOriginal.apoderadoId || null,
+                direccion: document.getElementById('editarDireccion').value.trim() || null,
+                telefono: document.getElementById('editarTelefono').value.trim() || null,
+                email: document.getElementById('editarEmail').value.trim() || null,
+                nombreContactoEmergencia: document.getElementById('editarNombreContactoEmergencia').value.trim() || null,
+                telefonoEmergencia: document.getElementById('editarTelefonoEmergencia').value.trim() || null,
+                alergias: document.getElementById('editarAlergias').value.trim() || null,
+                condicionesMedicas: document.getElementById('editarCondicionesMedicas').value.trim() || null,
+                tipoSangre: document.getElementById('editarTipoSangre').value || null,
+                gradoActual: estudianteOriginal.gradoActual || null,
+                seccionActual: document.getElementById('editarSeccionActual').value.trim() || estudianteOriginal.seccionActual || null,
+                añoAcademico: estudianteOriginal.añoAcademico || estudianteOriginal.anioAcademico || null
+            };
+            const response = await fetch(`${API_ESTUDIANTES}/${estudianteId}`, {
                 method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                 body: JSON.stringify(datos)
             });
-
-            if (!response.ok) {
-                let errorMsg = 'Error al actualizar estudiante';
-                try {
-                    const error = await response.json();
-                    console.error('Error del servidor:', error);
-
-                    if (typeof error === 'object' && !error.mensaje && !error.message) {
-                        errorMsg = Object.entries(error)
-                            .map(([campo, msg]) => `${campo}: ${msg}`)
-                            .join(', ');
-                    } else {
-                        errorMsg = error.mensaje || error.message || errorMsg;
-                    }
-                } catch (e) {
-                    const textError = await response.text();
-                    errorMsg = textError || errorMsg;
-                }
-                throw new Error(errorMsg);
-            }
-
-            const resultado = await response.json();
-            console.log('Estudiante actualizado:', resultado);
-
+            if (!response.ok) throw new Error('Error al actualizar estudiante');
             mostrarToast('Estudiante actualizado correctamente', 'success');
             bootstrap.Modal.getInstance(document.getElementById('modalEstudiante')).hide();
-
             await cargarDetallesEstudiante();
-
-        } catch (error) {
-            console.error('Error al guardar:', error);
-            mostrarToast(`Error: ${error.message}`, 'danger');
+        } catch (err) {
+            mostrarToast(`Error: ${err.message}`, 'danger');
         }
     }
 
     function formatearFecha(fecha) {
-        if (!fecha) return '-';
         const date = new Date(fecha);
-        return date.toLocaleDateString('es-PE', {
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit'
-        });
+        return date.toLocaleDateString('es-PE', { year: 'numeric', month: '2-digit', day: '2-digit' });
     }
 
     function calcularEdad(fechaNacimiento) {
-        if (!fechaNacimiento) return '-';
         const hoy = new Date();
         const nacimiento = new Date(fechaNacimiento);
         let edad = hoy.getFullYear() - nacimiento.getFullYear();
         const mes = hoy.getMonth() - nacimiento.getMonth();
-        if (mes < 0 || (mes === 0 && hoy.getDate() < nacimiento.getDate())) {
-            edad--;
-        }
+        if (mes < 0 || (mes === 0 && hoy.getDate() < nacimiento.getDate())) edad--;
         return edad;
     }
 
@@ -949,8 +860,7 @@
         toastBody.textContent = mensaje;
         toast.classList.remove('bg-success', 'bg-danger');
         toast.classList.add(`bg-${tipo}`);
-        const bsToast = new bootstrap.Toast(toast);
-        bsToast.show();
+        new bootstrap.Toast(toast).show();
     }
 
     function cerrarSesion() {
@@ -958,5 +868,6 @@
         window.location.href = 'login.html';
     }
 </script>
+
 </body>
 </html>

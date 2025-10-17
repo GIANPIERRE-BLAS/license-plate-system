@@ -590,432 +590,367 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
 <script>
     const API_BASE_URL = `${window.location.origin}/api`;
-  let token = '';
-  let usuarioActual = null;
-  let paginaActual = 0;
-  let totalPaginas = 0;
-  let usuariosData = [];
-  let usuarioIdEliminar = null;
+    const API_AUTH = `${API_BASE_URL}/auth`;
+    const API_USUARIOS = `${API_BASE_URL}/usuarios`;
+    const API_ESTUDIANTES = `${API_BASE_URL}/estudiantes`;
 
-  document.addEventListener('DOMContentLoaded', function() {
-      token = localStorage.getItem('token');
-      if (!token) {
-          window.location.href = 'login.html';
-          return;
-      }
-      validarSesion();
-      cargarUsuarios();
-      cargarEstadisticas();
-  });
+    let token = '';
+    let usuarioActual = null;
+    let paginaActual = 0;
+    let totalPaginas = 0;
+    let usuariosData = [];
+    let usuarioIdEliminar = null;
 
-  async function validarSesion() {
-      try {
-          const response = await fetch(`${API_URL}/auth/validate`, {
-              headers: {
-                  'Authorization': `Bearer ${token}`
-              }
-          });
+    document.addEventListener('DOMContentLoaded', function() {
+        token = localStorage.getItem('token');
+        if (!token) {
+            window.location.href = 'login.html';
+            return;
+        }
+        validarSesion();
+        cargarUsuarios();
+        cargarEstadisticas();
+    });
 
-          if (!response.ok) {
-              throw new Error('Sesión inválida');
-          }
+    async function validarSesion() {
+        try {
+            const response = await fetch(`${API_AUTH}/validate`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (!response.ok) throw new Error('Sesión inválida');
+            const data = await response.json();
+            if (data.valido) {
+                usuarioActual = data.usuario;
+                document.getElementById('nombreUsuario').textContent = usuarioActual.nombre;
+                if (usuarioActual.rol !== 'ADMIN') {
+                    mostrarError('No tienes permisos para acceder a esta página');
+                    setTimeout(() => window.location.href = 'index.html', 2000);
+                }
+            } else {
+                window.location.href = 'login.html';
+            }
+        } catch (error) {
+            console.error('Error validando sesión:', error);
+            window.location.href = 'login.html';
+        }
+    }
 
-          const data = await response.json();
-          if (data.valido) {
-              usuarioActual = data.usuario;
-              document.getElementById('nombreUsuario').textContent = usuarioActual.nombre;
+    async function cargarUsuarios(pagina = 0) {
+        try {
+            const response = await fetch(`${API_USUARIOS}?page=${pagina}&size=10`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (!response.ok) throw new Error('Error al cargar usuarios');
+            const data = await response.json();
+            usuariosData = data.content;
+            totalPaginas = data.totalPages;
+            paginaActual = data.currentPage;
+            renderizarTabla(usuariosData);
+            renderizarPaginacion();
+        } catch (error) {
+            console.error('Error:', error);
+            mostrarError('Error al cargar los usuarios');
+        }
+    }
 
-              if (usuarioActual.rol !== 'ADMIN') {
-                  mostrarError('No tienes permisos para acceder a esta página');
-                  setTimeout(() => window.location.href = 'index.html', 2000);
-              }
-          } else {
-              window.location.href = 'login.html';
-          }
-      } catch (error) {
-          console.error('Error validando sesión:', error);
-          window.location.href = 'login.html';
-      }
-  }
+    async function cargarEstadisticas() {
+        try {
+            const response = await fetch(`${API_USUARIOS}/estadisticas`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (!response.ok) throw new Error('Error al cargar estadísticas');
+            const stats = await response.json();
+            document.getElementById('totalUsuarios').textContent = stats.total;
+            document.getElementById('usuariosActivos').textContent = stats.activos;
+            document.getElementById('totalAdmins').textContent = stats.admins;
+            document.getElementById('totalDocentes').textContent = stats.docentes;
+        } catch (error) {
+            console.error('Error:', error);
+        }
+    }
 
-  async function cargarUsuarios(pagina = 0) {
-      try {
-          const response = await fetch(`${API_URL}/usuarios?page=${pagina}&size=10`, {
-              headers: {
-                  'Authorization': `Bearer ${token}`
-              }
-          });
+    function renderizarTabla(usuarios) {
+        const tbody = document.getElementById('tablaUsuarios');
+        if (usuarios.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="8" class="text-center">No se encontraron usuarios</td></tr>';
+            return;
+        }
+        tbody.innerHTML = usuarios.map(usuario => `
+            <tr>
+                <td>${usuario.id}</td>
+                <td>${usuario.nombre}</td>
+                <td>${usuario.email}</td>
+                <td><span class="badge badge-${usuario.rol.toLowerCase()}">${usuario.rol}</span></td>
+                <td>${usuario.numeroDocumento || '-'}</td>
+                <td>
+                    <span class="badge ${usuario.activo ? 'badge-success' : 'badge-danger'}">
+                        ${usuario.activo ? '✅ Activo' : '❌ Inactivo'}
+                    </span>
+                </td>
+                <td>${formatearFecha(usuario.createdAt)}</td>
+                <td>
+                    <button onclick="verDetalles(${usuario.id})" class="btn btn-sm btn-outline-primary" title="Ver detalles"><i class="fas fa-eye"></i></button>
+                    <button onclick="editarUsuario(${usuario.id})" class="btn btn-sm btn-outline-warning" title="Editar"><i class="fas fa-edit"></i></button>
+                    <button onclick="abrirModalEliminar(${usuario.id}, '${usuario.nombre}')" class="btn btn-sm btn-outline-danger" title="Eliminar"><i class="fas fa-trash"></i></button>
+                </td>
+            </tr>
+        `).join('');
+    }
 
-          if (!response.ok) throw new Error('Error al cargar usuarios');
+    function renderizarPaginacion() {
+        const paginacion = document.getElementById('paginacion');
+        if (totalPaginas <= 1) {
+            paginacion.innerHTML = '';
+            return;
+        }
+        let html = '';
+        if (paginaActual > 0) {
+            html += `<li class="page-item"><a class="page-link" href="#" onclick="cargarUsuarios(${paginaActual - 1})">Anterior</a></li>`;
+        }
+        for (let i = 0; i < totalPaginas; i++) {
+            html += `<li class="page-item ${i === paginaActual ? 'active' : ''}"><a class="page-link" href="#" onclick="cargarUsuarios(${i})">${i + 1}</a></li>`;
+        }
+        if (paginaActual < totalPaginas - 1) {
+            html += `<li class="page-item"><a class="page-link" href="#" onclick="cargarUsuarios(${paginaActual + 1})">Siguiente</a></li>`;
+        }
+        paginacion.innerHTML = html;
+    }
 
-          const data = await response.json();
-          usuariosData = data.content;
-          totalPaginas = data.totalPages;
-          paginaActual = data.currentPage;
+    async function buscarUsuarios() {
+        const termino = document.getElementById('inputBusqueda').value;
+        if (!termino.trim()) {
+            cargarUsuarios();
+            return;
+        }
+        try {
+            const response = await fetch(`${API_USUARIOS}/buscar?termino=${encodeURIComponent(termino)}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (!response.ok) throw new Error('Error en la búsqueda');
+            const data = await response.json();
+            usuariosData = data;
+            renderizarTabla(data);
+            document.getElementById('paginacion').innerHTML = '';
+        } catch (error) {
+            console.error('Error:', error);
+            mostrarError('Error al buscar usuarios');
+        }
+    }
 
-          renderizarTabla(usuariosData);
-          renderizarPaginacion();
-      } catch (error) {
-          console.error('Error:', error);
-          mostrarError('Error al cargar los usuarios');
-      }
-  }
+    async function aplicarFiltros() {
+        const rol = document.getElementById('filtroRol').value;
+        const estado = document.getElementById('filtroEstado').value;
+        try {
+            let url = `${API_USUARIOS}`;
+            if (rol) {
+                url = `${API_USUARIOS}/rol/${rol}`;
+            } else if (estado === 'true') {
+                url = `${API_USUARIOS}/activos`;
+            } else if (estado === '') {
+                url = `${API_USUARIOS}/todos`;
+            }
+            const response = await fetch(url, { headers: { 'Authorization': `Bearer ${token}` } });
+            if (!response.ok) throw new Error('Error al filtrar');
+            let data = await response.json();
+            if (estado === 'false' && !rol) {
+                data = data.filter(u => !u.activo);
+            } else if (estado !== '' && rol) {
+                const esActivo = estado === 'true';
+                data = data.filter(u => u.activo === esActivo);
+            }
+            usuariosData = data;
+            renderizarTabla(data);
+            document.getElementById('paginacion').innerHTML = '';
+        } catch (error) {
+            console.error('Error:', error);
+            mostrarError('Error al aplicar filtros');
+        }
+    }
 
-  async function cargarEstadisticas() {
-      try {
-          const response = await fetch(`${API_URL}/usuarios/estadisticas`, {
-              headers: {
-                  'Authorization': `Bearer ${token}`
-              }
-          });
+    function abrirModalNuevo() {
+        document.getElementById('modalUsuarioLabel').textContent = 'Nuevo Usuario';
+        document.getElementById('formUsuario').reset();
+        document.getElementById('usuarioId').value = '';
+        document.getElementById('password').required = true;
+        document.getElementById('activo').value = 'true';
+        const modal = new bootstrap.Modal(document.getElementById('modalUsuario'));
+        modal.show();
+    }
 
-          if (!response.ok) throw new Error('Error al cargar estadísticas');
+    async function editarUsuario(id) {
+        try {
+            const response = await fetch(`${API_USUARIOS}/${id}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (!response.ok) throw new Error('Error al cargar usuario');
+            const usuario = await response.json();
+            document.getElementById('modalUsuarioLabel').textContent = 'Editar Usuario';
+            document.getElementById('usuarioId').value = usuario.id;
+            document.getElementById('nombre').value = usuario.nombre;
+            document.getElementById('email').value = usuario.email;
+            document.getElementById('password').required = false;
+            document.getElementById('password').value = '';
+            document.getElementById('rol').value = usuario.rol;
+            document.getElementById('tipoDocumento').value = usuario.tipoDocumento || '';
+            document.getElementById('numeroDocumento').value = usuario.numeroDocumento || '';
+            document.getElementById('telefono').value = usuario.telefono || '';
+            document.getElementById('direccion').value = usuario.direccion || '';
+            document.getElementById('activo').value = usuario.activo.toString();
+            const modal = new bootstrap.Modal(document.getElementById('modalUsuario'));
+            modal.show();
+        } catch (error) {
+            console.error('Error:', error);
+            mostrarError('Error al cargar el usuario');
+        }
+    }
 
-          const stats = await response.json();
-          document.getElementById('totalUsuarios').textContent = stats.total;
-          document.getElementById('usuariosActivos').textContent = stats.activos;
-          document.getElementById('totalAdmins').textContent = stats.admins;
-          document.getElementById('totalDocentes').textContent = stats.docentes;
-      } catch (error) {
-          console.error('Error:', error);
-      }
-  }
+    async function guardarUsuario(event) {
+        event.preventDefault();
+        const id = document.getElementById('usuarioId').value;
+        const datos = {
+            nombre: document.getElementById('nombre').value,
+            email: document.getElementById('email').value,
+            rol: document.getElementById('rol').value,
+            tipoDocumento: document.getElementById('tipoDocumento').value || null,
+            numeroDocumento: document.getElementById('numeroDocumento').value || null,
+            telefono: document.getElementById('telefono').value || null,
+            direccion: document.getElementById('direccion').value || null,
+            activo: document.getElementById('activo').value === 'true'
+        };
+        const password = document.getElementById('password').value;
+        if (password) datos.password = password;
+        try {
+            const url = id ? `${API_USUARIOS}/${id}` : `${API_USUARIOS}`;
+            const method = id ? 'PUT' : 'POST';
+            const response = await fetch(url, {
+                method: method,
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify(datos)
+            });
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.mensaje || 'Error al guardar usuario');
+            }
+            mostrarExito(id ? 'Usuario actualizado correctamente' : 'Usuario creado correctamente');
+            bootstrap.Modal.getInstance(document.getElementById('modalUsuario')).hide();
+            cargarUsuarios(paginaActual);
+            cargarEstadisticas();
+        } catch (error) {
+            console.error('Error:', error);
+            mostrarError(error.message);
+        }
+    }
 
-  function renderizarTabla(usuarios) {
-      const tbody = document.getElementById('tablaUsuarios');
+    async function verDetalles(id) {
+        try {
+            const response = await fetch(`${API_USUARIOS}/${id}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (!response.ok) throw new Error('Error al cargar detalles');
+            const usuario = await response.json();
+            const html = `
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>ID:</strong> ${usuario.id}</p>
+                        <p><strong>Nombre:</strong> ${usuario.nombre}</p>
+                        <p><strong>Email:</strong> ${usuario.email}</p>
+                        <p><strong>Rol:</strong> <span class="badge badge-${usuario.rol.toLowerCase()}">${usuario.rol}</span></p>
+                        <p><strong>Documento:</strong> ${usuario.tipoDocumento || '-'}: ${usuario.numeroDocumento || '-'}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Teléfono:</strong> ${usuario.telefono || '-'}</p>
+                        <p><strong>Dirección:</strong> ${usuario.direccion || '-'}</p>
+                        <p><strong>Estado:</strong> <span class="badge ${usuario.activo ? 'badge-success' : 'badge-danger'}">${usuario.activo ? '✅ Activo' : '❌ Inactivo'}</span></p>
+                        <p><strong>Fecha Registro:</strong> ${formatearFecha(usuario.createdAt)}</p>
+                        <p><strong>Última Actualización:</strong> ${formatearFecha(usuario.updatedAt)}</p>
+                    </div>
+                </div>`;
+            document.getElementById('detallesUsuario').innerHTML = html;
+            const modal = new bootstrap.Modal(document.getElementById('modalDetalles'));
+            modal.show();
+        } catch (error) {
+            console.error('Error:', error);
+            mostrarError('Error al cargar los detalles');
+        }
+    }
 
-      if (usuarios.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="8" class="text-center">No se encontraron usuarios</td></tr>';
-          return;
-      }
+    function abrirModalEliminar(id, nombre) {
+        usuarioIdEliminar = id;
+        document.getElementById('usuarioEliminarNombre').textContent = nombre;
+        const modal = new bootstrap.Modal(document.getElementById('modalEliminar'));
+        modal.show();
+    }
 
-      tbody.innerHTML = usuarios.map(usuario => `
-          <tr>
-              <td>${usuario.id}</td>
-              <td>${usuario.nombre}</td>
-              <td>${usuario.email}</td>
-              <td><span class="badge badge-${usuario.rol.toLowerCase()}">${usuario.rol}</span></td>
-              <td>${usuario.numeroDocumento || '-'}</td>
-              <td>
-                  <span class="badge ${usuario.activo ? 'badge-success' : 'badge-danger'}">
-                      ${usuario.activo ? '✅ Activo' : '❌ Inactivo'}
-                  </span>
-              </td>
-              <td>${formatearFecha(usuario.createdAt)}</td>
-              <td>
-                  <button onclick="verDetalles(${usuario.id})" class="btn btn-sm btn-outline-primary" title="Ver detalles"><i class="fas fa-eye"></i></button>
-                  <button onclick="editarUsuario(${usuario.id})" class="btn btn-sm btn-outline-warning" title="Editar"><i class="fas fa-edit"></i></button>
-                  <button onclick="abrirModalEliminar(${usuario.id}, '${usuario.nombre}')" class="btn btn-sm btn-outline-danger" title="Eliminar"><i class="fas fa-trash"></i></button>
-              </td>
-          </tr>
-      `).join('');
-  }
+    async function confirmarEliminar() {
+        try {
+            const response = await fetch(`${API_USUARIOS}/${usuarioIdEliminar}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (!response.ok) throw new Error('Error al eliminar usuario');
+            mostrarExito('Usuario eliminado correctamente');
+            bootstrap.Modal.getInstance(document.getElementById('modalEliminar')).hide();
+            cargarUsuarios(paginaActual);
+            cargarEstadisticas();
+        } catch (error) {
+            console.error('Error:', error);
+            mostrarError('Error al eliminar el usuario');
+        }
+    }
 
-  function renderizarPaginacion() {
-      const paginacion = document.getElementById('paginacion');
-      if (totalPaginas <= 1) {
-          paginacion.innerHTML = '';
-          return;
-      }
+    async function cerrarSesion() {
+        try {
+            await fetch(`${API_AUTH}/logout`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+        } catch (error) {
+            console.error('Error al cerrar sesión:', error);
+        }
+        localStorage.removeItem('token');
+        window.location.href = 'login.html';
+    }
 
-      let html = '';
-      if (paginaActual > 0) {
-          html += `<li class="page-item"><a class="page-link" href="#" onclick="cargarUsuarios(${paginaActual - 1})">Anterior</a></li>`;
-      }
+    function formatearFecha(fecha) {
+        if (!fecha) return '-';
+        const date = new Date(fecha);
+        return date.toLocaleDateString('es-PE', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    }
 
-      for (let i = 0; i < totalPaginas; i++) {
-          html += `<li class="page-item ${i === paginaActual ? 'active' : ''}"><a class="page-link" href="#" onclick="cargarUsuarios(${i})">${i + 1}</a></li>`;
-      }
+    function mostrarExito(mensaje) {
+        const toast = document.getElementById('notificationToast');
+        const toastBody = document.getElementById('toastMessage');
+        toastBody.textContent = mensaje;
+        toast.classList.remove('bg-danger', 'bg-info', 'bg-warning');
+        toast.classList.add('bg-success');
+        const bsToast = new bootstrap.Toast(toast);
+        bsToast.show();
+    }
 
-      if (paginaActual < totalPaginas - 1) {
-          html += `<li class="page-item"><a class="page-link" href="#" onclick="cargarUsuarios(${paginaActual + 1})">Siguiente</a></li>`;
-      }
+    function mostrarError(mensaje) {
+        const toast = document.getElementById('notificationToast');
+        const toastBody = document.getElementById('toastMessage');
+        toastBody.textContent = mensaje;
+        toast.classList.remove('bg-success', 'bg-info', 'bg-warning');
+        toast.classList.add('bg-danger');
+        const bsToast = new bootstrap.Toast(toast);
+        bsToast.show();
+    }
 
-      paginacion.innerHTML = html;
-  }
+    document.getElementById('inputBusqueda').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            buscarUsuarios();
+        }
+    });
 
-  async function buscarUsuarios() {
-      const termino = document.getElementById('inputBusqueda').value;
-      if (!termino.trim()) {
-          cargarUsuarios();
-          return;
-      }
-
-      try {
-          const response = await fetch(`${API_URL}/usuarios/buscar?termino=${encodeURIComponent(termino)}`, {
-              headers: {
-                  'Authorization': `Bearer ${token}`
-              }
-          });
-
-          if (!response.ok) throw new Error('Error en la búsqueda');
-
-          const data = await response.json();
-          usuariosData = data;
-          renderizarTabla(data);
-          document.getElementById('paginacion').innerHTML = '';
-      } catch (error) {
-          console.error('Error:', error);
-          mostrarError('Error al buscar usuarios');
-      }
-  }
-
-  async function aplicarFiltros() {
-      const rol = document.getElementById('filtroRol').value;
-      const estado = document.getElementById('filtroEstado').value;
-
-      try {
-          let url = `${API_URL}/usuarios`;
-
-          if (rol) {
-              url = `${API_URL}/usuarios/rol/${rol}`;
-          } else if (estado === 'true') {
-              url = `${API_URL}/usuarios/activos`;
-          } else if (estado === '') {
-              url = `${API_URL}/usuarios/todos`;
-          }
-
-          const response = await fetch(url, {
-              headers: {
-                  'Authorization': `Bearer ${token}`
-              }
-          });
-
-          if (!response.ok) throw new Error('Error al filtrar');
-
-          let data = await response.json();
-
-          if (estado === 'false' && !rol) {
-              data = data.filter(u => !u.activo);
-          } else if (estado !== '' && rol) {
-              const esActivo = estado === 'true';
-              data = data.filter(u => u.activo === esActivo);
-          }
-
-          usuariosData = data;
-          renderizarTabla(data);
-          document.getElementById('paginacion').innerHTML = '';
-      } catch (error) {
-          console.error('Error:', error);
-          mostrarError('Error al aplicar filtros');
-      }
-  }
-
-  function abrirModalNuevo() {
-      document.getElementById('modalUsuarioLabel').textContent = 'Nuevo Usuario';
-      document.getElementById('formUsuario').reset();
-      document.getElementById('usuarioId').value = '';
-      document.getElementById('password').required = true;
-      document.getElementById('activo').value = 'true';
-      const modal = new bootstrap.Modal(document.getElementById('modalUsuario'));
-      modal.show();
-  }
-
-  async function editarUsuario(id) {
-      try {
-          const response = await fetch(`${API_URL}/usuarios/${id}`, {
-              headers: {
-                  'Authorization': `Bearer ${token}`
-              }
-          });
-
-          if (!response.ok) throw new Error('Error al cargar usuario');
-
-          const usuario = await response.json();
-
-          document.getElementById('modalUsuarioLabel').textContent = 'Editar Usuario';
-          document.getElementById('usuarioId').value = usuario.id;
-          document.getElementById('nombre').value = usuario.nombre;
-          document.getElementById('email').value = usuario.email;
-          document.getElementById('password').required = false;
-          document.getElementById('password').value = '';
-          document.getElementById('rol').value = usuario.rol;
-          document.getElementById('tipoDocumento').value = usuario.tipoDocumento || '';
-          document.getElementById('numeroDocumento').value = usuario.numeroDocumento || '';
-          document.getElementById('telefono').value = usuario.telefono || '';
-          document.getElementById('direccion').value = usuario.direccion || '';
-          document.getElementById('activo').value = usuario.activo.toString();
-
-          const modal = new bootstrap.Modal(document.getElementById('modalUsuario'));
-          modal.show();
-      } catch (error) {
-          console.error('Error:', error);
-          mostrarError('Error al cargar el usuario');
-      }
-  }
-
-  async function guardarUsuario(event) {
-      event.preventDefault();
-
-      const id = document.getElementById('usuarioId').value;
-      const datos = {
-          nombre: document.getElementById('nombre').value,
-          email: document.getElementById('email').value,
-          rol: document.getElementById('rol').value,
-          tipoDocumento: document.getElementById('tipoDocumento').value || null,
-          numeroDocumento: document.getElementById('numeroDocumento').value || null,
-          telefono: document.getElementById('telefono').value || null,
-          direccion: document.getElementById('direccion').value || null,
-          activo: document.getElementById('activo').value === 'true'
-      };
-
-      const password = document.getElementById('password').value;
-      if (password) {
-          datos.password = password;
-      }
-
-      try {
-          const url = id ? `${API_URL}/usuarios/${id}` : `${API_URL}/usuarios`;
-          const method = id ? 'PUT' : 'POST';
-
-          const response = await fetch(url, {
-              method: method,
-              headers: {
-                  'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${token}`
-              },
-              body: JSON.stringify(datos)
-          });
-
-          if (!response.ok) {
-              const error = await response.json();
-              throw new Error(error.mensaje || 'Error al guardar usuario');
-          }
-
-          mostrarExito(id ? 'Usuario actualizado correctamente' : 'Usuario creado correctamente');
-          bootstrap.Modal.getInstance(document.getElementById('modalUsuario')).hide();
-          cargarUsuarios(paginaActual);
-          cargarEstadisticas();
-      } catch (error) {
-          console.error('Error:', error);
-          mostrarError(error.message);
-      }
-  }
-
-  async function verDetalles(id) {
-      try {
-          const response = await fetch(`${API_URL}/usuarios/${id}`, {
-              headers: {
-                  'Authorization': `Bearer ${token}`
-              }
-          });
-
-          if (!response.ok) throw new Error('Error al cargar detalles');
-
-          const usuario = await response.json();
-
-          const html = `
-              <div class="row">
-                  <div class="col-md-6">
-                      <p><strong>ID:</strong> ${usuario.id}</p>
-                      <p><strong>Nombre:</strong> ${usuario.nombre}</p>
-                      <p><strong>Email:</strong> ${usuario.email}</p>
-                      <p><strong>Rol:</strong> <span class="badge badge-${usuario.rol.toLowerCase()}">${usuario.rol}</span></p>
-                      <p><strong>Documento:</strong> ${usuario.tipoDocumento || '-'}: ${usuario.numeroDocumento || '-'}</p>
-                  </div>
-                  <div class="col-md-6">
-                      <p><strong>Teléfono:</strong> ${usuario.telefono || '-'}</p>
-                      <p><strong>Dirección:</strong> ${usuario.direccion || '-'}</p>
-                      <p><strong>Estado:</strong> <span class="badge ${usuario.activo ? 'badge-success' : 'badge-danger'}">${usuario.activo ? '✅ Activo' : '❌ Inactivo'}</span></p>
-                      <p><strong>Fecha Registro:</strong> ${formatearFecha(usuario.createdAt)}</p>
-                      <p><strong>Última Actualización:</strong> ${formatearFecha(usuario.updatedAt)}</p>
-                  </div>
-              </div>
-          `;
-
-          document.getElementById('detallesUsuario').innerHTML = html;
-          const modal = new bootstrap.Modal(document.getElementById('modalDetalles'));
-          modal.show();
-      } catch (error) {
-          console.error('Error:', error);
-          mostrarError('Error al cargar los detalles');
-      }
-  }
-
-  function abrirModalEliminar(id, nombre) {
-      usuarioIdEliminar = id;
-      document.getElementById('usuarioEliminarNombre').textContent = nombre;
-      const modal = new bootstrap.Modal(document.getElementById('modalEliminar'));
-      modal.show();
-  }
-
-  async function confirmarEliminar() {
-      try {
-          const response = await fetch(`${API_URL}/usuarios/${usuarioIdEliminar}`, {
-              method: 'DELETE',
-              headers: {
-                  'Authorization': `Bearer ${token}`
-              }
-          });
-
-          if (!response.ok) throw new Error('Error al eliminar usuario');
-
-          mostrarExito('Usuario eliminado correctamente');
-          bootstrap.Modal.getInstance(document.getElementById('modalEliminar')).hide();
-          cargarUsuarios(paginaActual);
-          cargarEstadisticas();
-      } catch (error) {
-          console.error('Error:', error);
-          mostrarError('Error al eliminar el usuario');
-      }
-  }
-
-  async function cerrarSesion() {
-      try {
-          await fetch(`${API_URL}/auth/logout`, {
-              method: 'POST',
-              headers: {
-                  'Authorization': `Bearer ${token}`
-              }
-          });
-      } catch (error) {
-          console.error('Error al cerrar sesión:', error);
-      }
-
-      localStorage.removeItem('token');
-      window.location.href = 'login.html';
-  }
-
-  function formatearFecha(fecha) {
-      if (!fecha) return '-';
-      const date = new Date(fecha);
-      return date.toLocaleDateString('es-PE', {
-          year: 'numeric',
-          month: '2-digit',
-          day: '2-digit',
-          hour: '2-digit',
-          minute: '2-digit'
-      });
-  }
-
-  function mostrarExito(mensaje) {
-      const toast = document.getElementById('notificationToast');
-      const toastBody = document.getElementById('toastMessage');
-      toastBody.textContent = mensaje;
-      toast.classList.remove('bg-danger', 'bg-info', 'bg-warning');
-      toast.classList.add('bg-success');
-      const bsToast = new bootstrap.Toast(toast);
-      bsToast.show();
-  }
-
-  function mostrarError(mensaje) {
-      const toast = document.getElementById('notificationToast');
-      const toastBody = document.getElementById('toastMessage');
-      toastBody.textContent = mensaje;
-      toast.classList.remove('bg-success', 'bg-info', 'bg-warning');
-      toast.classList.add('bg-danger');
-      const bsToast = new bootstrap.Toast(toast);
-      bsToast.show();
-  }
-
-  document.getElementById('inputBusqueda').addEventListener('keypress', function(e) {
-      if (e.key === 'Enter') {
-          buscarUsuarios();
-      }
-  });
-
-  document.getElementById('filtroRol').addEventListener('change', aplicarFiltros);
-  document.getElementById('filtroEstado').addEventListener('change', aplicarFiltros);
+    document.getElementById('filtroRol').addEventListener('change', aplicarFiltros);
+    document.getElementById('filtroEstado').addEventListener('change', aplicarFiltros);
 </script>
 </body>
 </html>
