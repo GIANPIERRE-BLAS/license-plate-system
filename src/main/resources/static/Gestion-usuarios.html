@@ -591,310 +591,279 @@
 <script>
     const API_BASE_URL = `${window.location.origin}/api`;
     const API_AUTH = `${API_BASE_URL}/auth`;
-    const API_USUARIOS = `${API_BASE_URL}/usuarios`;
-    const API_ESTUDIANTES = `${API_BASE_URL}/estudiantes`;
+    const API_PROFESORES = `${API_BASE_URL}/profesores`;
 
     let token = '';
     let usuarioActual = null;
-    let paginaActual = 0;
-    let totalPaginas = 0;
-    let usuariosData = [];
-    let usuarioIdEliminar = null;
+    let profesoresData = [];
+    let profesorIdEliminar = null;
+    let modalProfesorInstance = null;
+    let modalEliminarInstance = null;
+    let modalDetallesInstance = null;
 
-    document.addEventListener('DOMContentLoaded', function() {
-        token = localStorage.getItem('token');
+    document.addEventListener('DOMContentLoaded', () => {
+
+        modalProfesorInstance = new bootstrap.Modal(document.getElementById('modalProfesor'));
+        modalEliminarInstance = new bootstrap.Modal(document.getElementById('modalEliminar'));
+        modalDetallesInstance = new bootstrap.Modal(document.getElementById('modalDetalles'));
+
+        token = localStorage.getItem('token') || '';
         if (!token) {
-            window.location.href = 'login.html';
-            return;
         }
-        validarSesion();
-        cargarUsuarios();
-        cargarEstadisticas();
+
+        validarSesion().finally(() => {
+            cargarProfesores();
+        });
+
+
+        const inputBusqueda = document.getElementById('inputBusqueda');
+        if (inputBusqueda) {
+            inputBusqueda.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') buscarProfesores();
+            });
+        }
+
+
+        const filtroEstado = document.getElementById('filtroEstado');
+        if (filtroEstado) filtroEstado.addEventListener('change', aplicarFiltrosCliente);
     });
 
+
     async function validarSesion() {
+        if (!token) return;
         try {
-            const response = await fetch(`${API_AUTH}/validate`, {
+            const res = await fetch(`${API_AUTH}/validate`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
-            if (!response.ok) throw new Error('Sesión inválida');
-            const data = await response.json();
-            if (data.valido) {
+            if (!res.ok) {
+                console.warn('Validación de sesión no OK');
+                return;
+            }
+            const data = await res.json();
+            if (data?.valido) {
                 usuarioActual = data.usuario;
-                document.getElementById('nombreUsuario').textContent = usuarioActual.nombre;
+                const nombreUsuarioEl = document.getElementById('nombreUsuario');
+                if (nombreUsuarioEl) nombreUsuarioEl.textContent = usuarioActual.nombre || 'ADMIN';
                 if (usuarioActual.rol !== 'ADMIN') {
                     mostrarError('No tienes permisos para acceder a esta página');
-                    setTimeout(() => window.location.href = 'index.html', 2000);
+
                 }
+            }
+        } catch (err) {
+            console.error('Error validando sesión:', err);
+        }
+    }
+
+    async function cargarProfesores() {
+        try {
+            const response = await fetch(API_PROFESORES, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (!response.ok) throw new Error('Error al cargar profesores, status ' + response.status);
+            const data = await response.json();
+            if (!Array.isArray(data)) {
+                console.warn('Respuesta no es array:', data);
+                profesoresData = [];
             } else {
-                window.location.href = 'login.html';
+                profesoresData = data;
             }
-        } catch (error) {
-            console.error('Error validando sesión:', error);
-            window.location.href = 'login.html';
+            renderizarTabla(profesoresData);
+            actualizarEstadisticas();
+        } catch (err) {
+            console.error('Error al cargar profesores:', err);
+            profesoresData = [];
+            renderizarTabla(profesoresData);
+            actualizarEstadisticas();
+            mostrarError('Error al cargar los profesores');
         }
     }
 
-    async function cargarUsuarios(pagina = 0) {
-        try {
-            const response = await fetch(`${API_USUARIOS}?page=${pagina}&size=10`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            if (!response.ok) throw new Error('Error al cargar usuarios');
-            const data = await response.json();
-            usuariosData = data.content;
-            totalPaginas = data.totalPages;
-            paginaActual = data.currentPage;
-            renderizarTabla(usuariosData);
-            renderizarPaginacion();
-        } catch (error) {
-            console.error('Error:', error);
-            mostrarError('Error al cargar los usuarios');
-        }
+    function actualizarEstadisticas() {
+        const total = profesoresData.length;
+        const activos = profesoresData.filter(p => p.activo).length;
+        const elTotal = document.getElementById('totalProfesores');
+        const elActivos = document.getElementById('profesoresActivos');
+        if (elTotal) elTotal.textContent = total;
+        if (elActivos) elActivos.textContent = activos;
     }
 
-    async function cargarEstadisticas() {
-        try {
-            const response = await fetch(`${API_USUARIOS}/estadisticas`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            if (!response.ok) throw new Error('Error al cargar estadísticas');
-            const stats = await response.json();
-            document.getElementById('totalUsuarios').textContent = stats.total;
-            document.getElementById('usuariosActivos').textContent = stats.activos;
-            document.getElementById('totalAdmins').textContent = stats.admins;
-            document.getElementById('totalDocentes').textContent = stats.docentes;
-        } catch (error) {
-            console.error('Error:', error);
-        }
-    }
-
-    function renderizarTabla(usuarios) {
-        const tbody = document.getElementById('tablaUsuarios');
-        if (usuarios.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="8" class="text-center">No se encontraron usuarios</td></tr>';
+    function renderizarTabla(profesores) {
+        const tbody = document.getElementById('tablaProfesores');
+        if (!tbody) return;
+        if (!profesores || profesores.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="9" class="text-center">No se encontraron profesores</td></tr>';
             return;
         }
-        tbody.innerHTML = usuarios.map(usuario => `
-            <tr>
-                <td>${usuario.id}</td>
-                <td>${usuario.nombre}</td>
-                <td>${usuario.email}</td>
-                <td><span class="badge badge-${usuario.rol.toLowerCase()}">${usuario.rol}</span></td>
-                <td>${usuario.numeroDocumento || '-'}</td>
-                <td>
-                    <span class="badge ${usuario.activo ? 'badge-success' : 'badge-danger'}">
-                        ${usuario.activo ? '✅ Activo' : '❌ Inactivo'}
-                    </span>
-                </td>
-                <td>${formatearFecha(usuario.createdAt)}</td>
-                <td>
-                    <button onclick="verDetalles(${usuario.id})" class="btn btn-sm btn-outline-primary" title="Ver detalles"><i class="fas fa-eye"></i></button>
-                    <button onclick="editarUsuario(${usuario.id})" class="btn btn-sm btn-outline-warning" title="Editar"><i class="fas fa-edit"></i></button>
-                    <button onclick="abrirModalEliminar(${usuario.id}, '${usuario.nombre}')" class="btn btn-sm btn-outline-danger" title="Eliminar"><i class="fas fa-trash"></i></button>
-                </td>
-            </tr>
-        `).join('');
+
+        tbody.innerHTML = profesores.map(profesor => {
+
+            const nombreFull = ((profesor.nombre || '') + ' ' + (profesor.apellido || '')).replace(/'/g, "\\'");
+            return `
+                <tr>
+                    <td>${profesor.id ?? '-'}</td>
+                    <td>${profesor.nombre ?? '-'}</td>
+                    <td>${profesor.apellido ?? '-'}</td>
+                    <td>${profesor.dni ?? '-'}</td>
+                    <td>${profesor.email ?? '-'}</td>
+                    <td>${profesor.telefono ?? '-'}</td>
+                    <td>${profesor.especialidad ?? '-'}</td>
+                    <td><span class="badge ${profesor.activo ? 'bg-success' : 'bg-danger'}">${profesor.activo ? 'Activo' : 'Inactivo'}</span></td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-primary" onclick="verDetalles(${profesor.id})" title="Ver"><i class="fas fa-eye"></i></button>
+                        <button class="btn btn-sm btn-outline-warning" onclick="editarProfesor(${profesor.id})" title="Editar"><i class="fas fa-edit"></i></button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="abrirModalEliminar(${profesor.id}, '${nombreFull}')" title="Desactivar"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>
+            `;
+        }).join('');
     }
 
-    function renderizarPaginacion() {
-        const paginacion = document.getElementById('paginacion');
-        if (totalPaginas <= 1) {
-            paginacion.innerHTML = '';
-            return;
+    function buscarProfesores() {
+        const termino = (document.getElementById('inputBusqueda')?.value || '').trim().toLowerCase();
+        const estado = (document.getElementById('filtroEstado')?.value ?? '');
+        let resultado = profesoresData.slice();
+
+        if (termino) {
+            resultado = resultado.filter(p =>
+                (p.nombre || '').toLowerCase().includes(termino) ||
+                (p.apellido || '').toLowerCase().includes(termino) ||
+                (p.email || '').toLowerCase().includes(termino) ||
+                (p.dni || '').toLowerCase().includes(termino)
+            );
         }
-        let html = '';
-        if (paginaActual > 0) {
-            html += `<li class="page-item"><a class="page-link" href="#" onclick="cargarUsuarios(${paginaActual - 1})">Anterior</a></li>`;
-        }
-        for (let i = 0; i < totalPaginas; i++) {
-            html += `<li class="page-item ${i === paginaActual ? 'active' : ''}"><a class="page-link" href="#" onclick="cargarUsuarios(${i})">${i + 1}</a></li>`;
-        }
-        if (paginaActual < totalPaginas - 1) {
-            html += `<li class="page-item"><a class="page-link" href="#" onclick="cargarUsuarios(${paginaActual + 1})">Siguiente</a></li>`;
-        }
-        paginacion.innerHTML = html;
+
+        if (estado === 'true') resultado = resultado.filter(p => p.activo);
+        if (estado === 'false') resultado = resultado.filter(p => !p.activo);
+
+        renderizarTabla(resultado);
     }
 
-    async function buscarUsuarios() {
-        const termino = document.getElementById('inputBusqueda').value;
-        if (!termino.trim()) {
-            cargarUsuarios();
-            return;
-        }
-        try {
-            const response = await fetch(`${API_USUARIOS}/buscar?termino=${encodeURIComponent(termino)}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            if (!response.ok) throw new Error('Error en la búsqueda');
-            const data = await response.json();
-            usuariosData = data;
-            renderizarTabla(data);
-            document.getElementById('paginacion').innerHTML = '';
-        } catch (error) {
-            console.error('Error:', error);
-            mostrarError('Error al buscar usuarios');
-        }
-    }
-
-    async function aplicarFiltros() {
-        const rol = document.getElementById('filtroRol').value;
-        const estado = document.getElementById('filtroEstado').value;
-        try {
-            let url = `${API_USUARIOS}`;
-            if (rol) {
-                url = `${API_USUARIOS}/rol/${rol}`;
-            } else if (estado === 'true') {
-                url = `${API_USUARIOS}/activos`;
-            } else if (estado === '') {
-                url = `${API_USUARIOS}/todos`;
-            }
-            const response = await fetch(url, { headers: { 'Authorization': `Bearer ${token}` } });
-            if (!response.ok) throw new Error('Error al filtrar');
-            let data = await response.json();
-            if (estado === 'false' && !rol) {
-                data = data.filter(u => !u.activo);
-            } else if (estado !== '' && rol) {
-                const esActivo = estado === 'true';
-                data = data.filter(u => u.activo === esActivo);
-            }
-            usuariosData = data;
-            renderizarTabla(data);
-            document.getElementById('paginacion').innerHTML = '';
-        } catch (error) {
-            console.error('Error:', error);
-            mostrarError('Error al aplicar filtros');
-        }
+    function aplicarFiltrosCliente() {
+        buscarProfesores();
     }
 
     function abrirModalNuevo() {
-        document.getElementById('modalUsuarioLabel').textContent = 'Nuevo Usuario';
-        document.getElementById('formUsuario').reset();
-        document.getElementById('usuarioId').value = '';
-        document.getElementById('password').required = true;
-        document.getElementById('activo').value = 'true';
-        const modal = new bootstrap.Modal(document.getElementById('modalUsuario'));
-        modal.show();
+        document.getElementById('modalProfesorLabel').innerHTML = '<i class="fas fa-user-plus me-2"></i>Nuevo Profesor';
+        const form = document.getElementById('formProfesor');
+        if (form) form.reset();
+        const idEl = document.getElementById('profesorId');
+        if (idEl) idEl.value = '';
+        const activoEl = document.getElementById('activo');
+        if (activoEl) activoEl.value = 'true';
+        modalProfesorInstance.show();
     }
 
-    async function editarUsuario(id) {
+    async function editarProfesor(id) {
         try {
-            const response = await fetch(`${API_USUARIOS}/${id}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            if (!response.ok) throw new Error('Error al cargar usuario');
-            const usuario = await response.json();
-            document.getElementById('modalUsuarioLabel').textContent = 'Editar Usuario';
-            document.getElementById('usuarioId').value = usuario.id;
-            document.getElementById('nombre').value = usuario.nombre;
-            document.getElementById('email').value = usuario.email;
-            document.getElementById('password').required = false;
-            document.getElementById('password').value = '';
-            document.getElementById('rol').value = usuario.rol;
-            document.getElementById('tipoDocumento').value = usuario.tipoDocumento || '';
-            document.getElementById('numeroDocumento').value = usuario.numeroDocumento || '';
-            document.getElementById('telefono').value = usuario.telefono || '';
-            document.getElementById('direccion').value = usuario.direccion || '';
-            document.getElementById('activo').value = usuario.activo.toString();
-            const modal = new bootstrap.Modal(document.getElementById('modalUsuario'));
-            modal.show();
-        } catch (error) {
-            console.error('Error:', error);
-            mostrarError('Error al cargar el usuario');
+            const res = await fetch(`${API_PROFESORES}/${id}`, { headers: { 'Authorization': `Bearer ${token}` }});
+            if (!res.ok) throw new Error('Error al cargar profesor');
+            const profesor = await res.json();
+            document.getElementById('modalProfesorLabel').textContent = 'Editar Profesor';
+            document.getElementById('profesorId').value = profesor.id ?? '';
+            document.getElementById('nombre').value = profesor.nombre ?? '';
+            document.getElementById('apellido').value = profesor.apellido ?? '';
+            document.getElementById('dni').value = profesor.dni ?? '';
+            document.getElementById('email').value = profesor.email ?? '';
+            document.getElementById('telefono').value = profesor.telefono ?? '';
+            document.getElementById('especialidad').value = profesor.especialidad ?? '';
+            document.getElementById('activo').value = (profesor.activo === true) ? 'true' : 'false';
+            modalProfesorInstance.show();
+        } catch (err) {
+            console.error(err);
+            mostrarError('Error al cargar el profesor');
         }
     }
 
-    async function guardarUsuario(event) {
+    async function guardarProfesor(event) {
         event.preventDefault();
-        const id = document.getElementById('usuarioId').value;
+        const id = document.getElementById('profesorId').value;
         const datos = {
             nombre: document.getElementById('nombre').value,
+            apellido: document.getElementById('apellido').value,
+            dni: document.getElementById('dni').value,
             email: document.getElementById('email').value,
-            rol: document.getElementById('rol').value,
-            tipoDocumento: document.getElementById('tipoDocumento').value || null,
-            numeroDocumento: document.getElementById('numeroDocumento').value || null,
             telefono: document.getElementById('telefono').value || null,
-            direccion: document.getElementById('direccion').value || null,
+            especialidad: document.getElementById('especialidad').value,
             activo: document.getElementById('activo').value === 'true'
         };
-        const password = document.getElementById('password').value;
-        if (password) datos.password = password;
+
         try {
-            const url = id ? `${API_USUARIOS}/${id}` : `${API_USUARIOS}`;
+            const url = id ? `${API_PROFESORES}/${id}` : API_PROFESORES;
             const method = id ? 'PUT' : 'POST';
-            const response = await fetch(url, {
-                method: method,
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            const res = await fetch(url, {
+                method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
                 body: JSON.stringify(datos)
             });
-            if (!response.ok) {
-                const error = await response.json();
-                throw new Error(error.mensaje || 'Error al guardar usuario');
+            if (!res.ok) {
+                let text = await res.text();
+                try {
+                    const j = JSON.parse(text);
+                    throw new Error(j.mensaje || j.message || text || 'Error al guardar');
+                } catch (e) {
+                    throw new Error(text || 'Error al guardar');
+                }
             }
-            mostrarExito(id ? 'Usuario actualizado correctamente' : 'Usuario creado correctamente');
-            bootstrap.Modal.getInstance(document.getElementById('modalUsuario')).hide();
-            cargarUsuarios(paginaActual);
-            cargarEstadisticas();
-        } catch (error) {
-            console.error('Error:', error);
-            mostrarError(error.message);
+            modalProfesorInstance.hide();
+            mostrarExito(id ? 'Profesor actualizado correctamente' : 'Profesor creado correctamente');
+            await cargarProfesores();
+        } catch (err) {
+            console.error('Error guardarProfesor:', err);
+            mostrarError(err.message || 'Error al guardar el profesor');
         }
     }
 
     async function verDetalles(id) {
         try {
-            const response = await fetch(`${API_USUARIOS}/${id}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            if (!response.ok) throw new Error('Error al cargar detalles');
-            const usuario = await response.json();
+            const res = await fetch(`${API_PROFESORES}/${id}`, { headers: { 'Authorization': `Bearer ${token}` }});
+            if (!res.ok) throw new Error('Error al cargar detalles');
+            const profesor = await res.json();
             const html = `
                 <div class="row">
                     <div class="col-md-6">
-                        <p><strong>ID:</strong> ${usuario.id}</p>
-                        <p><strong>Nombre:</strong> ${usuario.nombre}</p>
-                        <p><strong>Email:</strong> ${usuario.email}</p>
-                        <p><strong>Rol:</strong> <span class="badge badge-${usuario.rol.toLowerCase()}">${usuario.rol}</span></p>
-                        <p><strong>Documento:</strong> ${usuario.tipoDocumento || '-'}: ${usuario.numeroDocumento || '-'}</p>
+                        <p><strong>ID:</strong> ${profesor.id ?? '-'}</p>
+                        <p><strong>Nombre:</strong> ${profesor.nombre ?? '-'}</p>
+                        <p><strong>Apellido:</strong> ${profesor.apellido ?? '-'}</p>
+                        <p><strong>DNI:</strong> ${profesor.dni ?? '-'}</p>
+                        <p><strong>Email:</strong> ${profesor.email ?? '-'}</p>
                     </div>
                     <div class="col-md-6">
-                        <p><strong>Teléfono:</strong> ${usuario.telefono || '-'}</p>
-                        <p><strong>Dirección:</strong> ${usuario.direccion || '-'}</p>
-                        <p><strong>Estado:</strong> <span class="badge ${usuario.activo ? 'badge-success' : 'badge-danger'}">${usuario.activo ? '✅ Activo' : '❌ Inactivo'}</span></p>
-                        <p><strong>Fecha Registro:</strong> ${formatearFecha(usuario.createdAt)}</p>
-                        <p><strong>Última Actualización:</strong> ${formatearFecha(usuario.updatedAt)}</p>
+                        <p><strong>Teléfono:</strong> ${profesor.telefono ?? '-'}</p>
+                        <p><strong>Especialidad:</strong> ${profesor.especialidad ?? '-'}</p>
+                        <p><strong>Estado:</strong> <span class="badge ${profesor.activo ? 'bg-success' : 'bg-danger'}">${profesor.activo ? 'Activo' : 'Inactivo'}</span></p>
                     </div>
                 </div>`;
-            document.getElementById('detallesUsuario').innerHTML = html;
-            const modal = new bootstrap.Modal(document.getElementById('modalDetalles'));
-            modal.show();
-        } catch (error) {
-            console.error('Error:', error);
+            document.getElementById('detallesProfesor').innerHTML = html;
+            modalDetallesInstance.show();
+        } catch (err) {
+            console.error(err);
             mostrarError('Error al cargar los detalles');
         }
     }
 
     function abrirModalEliminar(id, nombre) {
-        usuarioIdEliminar = id;
-        document.getElementById('usuarioEliminarNombre').textContent = nombre;
-        const modal = new bootstrap.Modal(document.getElementById('modalEliminar'));
-        modal.show();
+        profesorIdEliminar = id;
+        document.getElementById('profesorEliminarNombre').textContent = nombre || '';
+        modalEliminarInstance.show();
     }
 
     async function confirmarEliminar() {
+        if (!profesorIdEliminar) return;
         try {
-            const response = await fetch(`${API_USUARIOS}/${usuarioIdEliminar}`, {
+            const res = await fetch(`${API_PROFESORES}/${profesorIdEliminar}`, {
                 method: 'DELETE',
                 headers: { 'Authorization': `Bearer ${token}` }
             });
-            if (!response.ok) throw new Error('Error al eliminar usuario');
-            mostrarExito('Usuario eliminado correctamente');
-            bootstrap.Modal.getInstance(document.getElementById('modalEliminar')).hide();
-            cargarUsuarios(paginaActual);
-            cargarEstadisticas();
-        } catch (error) {
-            console.error('Error:', error);
-            mostrarError('Error al eliminar el usuario');
+            if (!res.ok) throw new Error('Error al desactivar');
+            modalEliminarInstance.hide();
+            mostrarExito('Profesor desactivado correctamente');
+            await cargarProfesores();
+        } catch (err) {
+            console.error(err);
+            mostrarError('Error al desactivar el profesor');
         }
     }
 
@@ -904,53 +873,25 @@
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}` }
             });
-        } catch (error) {
-            console.error('Error al cerrar sesión:', error);
+        } catch (err) {
+            console.warn('Error cerrar sesión:', err);
         }
         localStorage.removeItem('token');
         window.location.href = 'login.html';
     }
 
-    function formatearFecha(fecha) {
-        if (!fecha) return '-';
-        const date = new Date(fecha);
-        return date.toLocaleDateString('es-PE', {
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit'
-        });
-    }
-
     function mostrarExito(mensaje) {
-        const toast = document.getElementById('notificationToast');
-        const toastBody = document.getElementById('toastMessage');
-        toastBody.textContent = mensaje;
-        toast.classList.remove('bg-danger', 'bg-info', 'bg-warning');
-        toast.classList.add('bg-success');
-        const bsToast = new bootstrap.Toast(toast);
-        bsToast.show();
+        const toastEl = document.getElementById('notificationToast');
+        document.getElementById('toastMessage').textContent = mensaje;
+        toastEl.classList.remove('bg-danger');
+        new bootstrap.Toast(toastEl).show();
     }
-
     function mostrarError(mensaje) {
-        const toast = document.getElementById('notificationToast');
-        const toastBody = document.getElementById('toastMessage');
-        toastBody.textContent = mensaje;
-        toast.classList.remove('bg-success', 'bg-info', 'bg-warning');
-        toast.classList.add('bg-danger');
-        const bsToast = new bootstrap.Toast(toast);
-        bsToast.show();
+        const toastEl = document.getElementById('notificationToast');
+        document.getElementById('toastMessage').textContent = mensaje;
+        toastEl.classList.add('bg-danger');
+        new bootstrap.Toast(toastEl).show();
     }
-
-    document.getElementById('inputBusqueda').addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') {
-            buscarUsuarios();
-        }
-    });
-
-    document.getElementById('filtroRol').addEventListener('change', aplicarFiltros);
-    document.getElementById('filtroEstado').addEventListener('change', aplicarFiltros);
 </script>
 </body>
 </html>

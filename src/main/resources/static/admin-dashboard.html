@@ -1896,9 +1896,6 @@ function mostrarCursosModal(cursos) {
                             <button class="btn btn-sm btn-outline-primary" onclick="editarCurso(${curso.id})" title="Editar curso">
                                 <i class="fas fa-edit me-1"></i> Editar
                             </button>
-                            <button class="btn btn-sm btn-outline-info" onclick="verDetallesCurso(${curso.id})" title="Ver detalles">
-                                <i class="fas fa-eye me-1"></i> Ver
-                            </button>
                             <button class="btn btn-sm btn-outline-danger" onclick="eliminarCurso(${curso.id})" title="Eliminar curso">
                                 <i class="fas fa-trash me-1"></i> Eliminar
                             </button>
@@ -2143,9 +2140,6 @@ async function eliminarCurso(cursoId) {
     }
 }
 
-function verDetallesCurso(cursoId) {
-    mostrarInfo('Detalles del curso en desarrollo');
-}
 
 function gestionarPagos() {
     window.location.href = 'Gestion-pagos.html';
