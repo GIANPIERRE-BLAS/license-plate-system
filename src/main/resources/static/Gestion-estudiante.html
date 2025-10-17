@@ -771,6 +771,39 @@
         if (filtroEstado) filtroEstado.addEventListener('change', aplicarFiltrosCliente);
     });
 
+function verificarAutenticacion() {
+    const token = localStorage.getItem('token');
+    const usuario = localStorage.getItem('usuario');
+
+    if (!token || !usuario) {
+        window.location.href = 'login.html';
+        return;
+    }
+
+    try {
+        currentUser = JSON.parse(usuario);
+
+        // Validar que sea administrador
+        if (currentUser.rol !== 'ADMIN' && currentUser.rol !== 'SUPER_ADMIN') {
+            window.location.href = 'login.html';
+            return;
+        }
+
+        // AQUÍ ESTÁ LA CLAVE: usar currentUser.nombre directamente
+        const nombreUsuarioEl = document.getElementById('adminName');
+        if (nombreUsuarioEl) {
+            nombreUsuarioEl.textContent = currentUser.nombre || 'ADMINISTRADOR';
+            console.log('✅ Nombre de usuario actualizado:', currentUser.nombre);
+        }
+
+        cargarDatos();
+    } catch (error) {
+        console.error('❌ Error al verificar autenticación:', error);
+        console.log('Token:', token);
+        console.log('Usuario almacenado:', usuario);
+        cerrarSesion();
+    }
+}
     async function validarSesion() {
         try {
             const res = await fetch(`${API_AUTH}/validate`, {
