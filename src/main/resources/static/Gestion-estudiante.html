@@ -903,6 +903,12 @@
             document.getElementById('gradoActual').value = estudiante.gradoActual ?? '';
             document.getElementById('seccionActual').value = estudiante.seccionActual ?? '';
             document.getElementById('añoAcademico').value = estudiante.añoAcademico ?? '';
+            document.getElementById('gradoActual').readOnly = true;
+            document.getElementById('seccionActual').readOnly = true;
+            document.getElementById('añoAcademico').readOnly = true;
+            document.getElementById('gradoActual').style.backgroundColor = '#e9ecef';
+            document.getElementById('seccionActual').style.backgroundColor = '#e9ecef';
+            document.getElementById('añoAcademico').style.backgroundColor = '#e9ecef';
             document.getElementById('nombreContactoEmergencia').value = estudiante.nombreContactoEmergencia ?? '';
             document.getElementById('telefonoEmergencia').value = estudiante.telefonoEmergencia ?? '';
             document.getElementById('alergias').value = estudiante.alergias ?? '';
@@ -917,81 +923,12 @@
         }
     }
 
-    async function guardarEstudiante(event) {
-        event.preventDefault();
-        const id = document.getElementById('estudianteId').value;
-        const datos = {
-            nombres: document.getElementById('nombres').value.trim(),
-            apellidos: document.getElementById('apellidos').value.trim(),
-            tipoDocumento: document.getElementById('tipoDocumento').value,
-            numeroDocumento: document.getElementById('numeroDocumento').value.trim(),
-            fechaNacimiento: document.getElementById('fechaNacimiento').value,
-            genero: document.getElementById('genero').value,
-            direccion: document.getElementById('direccion').value.trim() || null,
-            telefono: document.getElementById('telefono').value.trim() || null,
-            email: document.getElementById('email').value.trim() || null,
-            apoderadoId: Number(document.getElementById('apoderadoId').value),
-            nombreContactoEmergencia: document.getElementById('nombreContactoEmergencia').value.trim() || null,
-            telefonoEmergencia: document.getElementById('telefonoEmergencia').value.trim() || null,
-            alergias: document.getElementById('alergias').value.trim() || null,
-            condicionesMedicas: document.getElementById('condicionesMedicas').value.trim() || null,
-            tipoSangre: document.getElementById('tipoSangre').value || null
-        };
-        try {
-            const url = id ? `${API_ESTUDIANTES}/${id}` : `${API_ESTUDIANTES}`;
-            const method = id ? 'PUT' : 'POST';
-            const res = await fetch(url, {
-                method,
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                body: JSON.stringify(datos)
-            });
-            if (!res.ok) throw new Error('Error al guardar estudiante');
-            modalEstudianteInstance.hide();
-            mostrarExito(id ? 'Estudiante actualizado correctamente' : 'Estudiante creado correctamente');
-            await cargarEstudiantes();
-        } catch (err) {
-            mostrarError('Error al guardar el estudiante: ' + err.message);
-        }
-    }
-
-    async function verDetalles(id) {
-        try {
-            const res = await fetch(`${API_ESTUDIANTES}/${id}`, { headers: { 'Authorization': `Bearer ${token}` } });
-            if (!res.ok) throw new Error(`Error al cargar detalles, status ${res.status}`);
-            const estudiante = await res.json();
-            const html = `
-                <div class="row">
-                    <div class="col-md-6">
-                        <p><strong>ID:</strong> ${estudiante.id ?? '-'}</p>
-                        <p><strong>Nombres:</strong> ${estudiante.nombres ?? '-'}</p>
-                        <p><strong>Apellidos:</strong> ${estudiante.apellidos ?? '-'}</p>
-                        <p><strong>Nombre Completo:</strong> ${estudiante.nombreCompleto ?? '-'}</p>
-                        <p><strong>Tipo Documento:</strong> ${estudiante.tipoDocumento ?? '-'}</p>
-                        <p><strong>Número Documento:</strong> ${estudiante.numeroDocumento ?? '-'}</p>
-                        <p><strong>Fecha Nacimiento:</strong> ${estudiante.fechaNacimiento ?? '-'}</p>
-                        <p><strong>Género:</strong> ${estudiante.genero ?? '-'}</p>
-                        <p><strong>Dirección:</strong> ${estudiante.direccion ?? '-'}</p>
-                        <p><strong>Teléfono:</strong> ${estudiante.telefono ?? '-'}</p>
-                    </div>
-                    <div class="col-md-6">
-                        <p><strong>Email:</strong> ${estudiante.email ?? '-'}</p>
-                        <p><strong>Grado Actual:</strong> ${estudiante.gradoActual ?? '-'}</p>
-                        <p><strong>Sección Actual:</strong> ${estudiante.seccionActual ?? '-'}</p>
-                        <p><strong>Año Académico:</strong> ${estudiante.añoAcademico ?? '-'}</p>
-                        <p><strong>Estado:</strong> <span class="badge ${estudiante.estadoEstudiante === 'ACTIVO' ? 'bg-success' : 'bg-danger'}">${estudiante.estadoEstudiante ?? '-'}</span></p>
-                        <p><strong>Apoderado:</strong> ${estudiante.nombreApoderado ?? '-'}</p>
-                        <p><strong>Contacto Emergencia:</strong> ${estudiante.nombreContactoEmergencia ?? '-'}</p>
-                        <p><strong>Teléfono Emergencia:</strong> ${estudiante.telefonoEmergencia ?? '-'}</p>
-                        <p><strong>Alergias:</strong> ${estudiante.alergias ?? '-'}</p>
-                        <p><strong>Condiciones Médicas:</strong> ${estudiante.condicionesMedicas ?? '-'}</p>
-                        <p><strong>Tipo de Sangre:</strong> ${estudiante.tipoSangre ?? '-'}</p>
-                    </div>
-                </div>`;
-            document.getElementById('detallesEstudiante').innerHTML = html;
-            modalDetallesInstance.show();
-        } catch (err) {
-            mostrarError('Error al cargar los detalles: ' + err.message);
-        }
+    function abrirModalCambiarEstado(id, nombre) {
+        estudianteIdCambiarEstado = id;
+        document.getElementById('nombreEstudianteEstado').textContent = nombre;
+        document.getElementById('nuevoEstado').value = '';
+        document.getElementById('motivoEstado').value = '';
+        modalCambiarEstadoInstance.show();
     }
 
     async function confirmarCambiarEstado() {
@@ -1036,5 +973,6 @@
         new bootstrap.Toast(toastEl).show();
     }
 </script>
+
 </body>
 </html>

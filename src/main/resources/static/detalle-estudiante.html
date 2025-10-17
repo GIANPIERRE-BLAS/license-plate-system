@@ -664,6 +664,7 @@
     const API_BASE_URL = `${window.location.origin}/api`;
     const API_AUTH = `${API_BASE_URL}/auth`;
     const API_ESTUDIANTES = `${API_BASE_URL}/estudiantes`;
+
     let token = localStorage.getItem('token');
     let estudianteId = new URLSearchParams(window.location.search).get('id');
 
@@ -719,8 +720,8 @@
     function mostrarDetallesEstudiante(estudiante) {
         const datos = {
             id: estudiante.id || '-',
-            nombres: estudiante.nombres || estudiante.nombre || '-',
-            apellidos: estudiante.apellidos || estudiante.apellido || '-',
+            nombres: estudiante.nombres || '-',
+            apellidos: estudiante.apellidos || '-',
             tipoDocumento: estudiante.tipoDocumento || '-',
             numeroDocumento: estudiante.numeroDocumento || '-',
             fechaNacimiento: estudiante.fechaNacimiento || '-',
@@ -783,6 +784,12 @@
             document.getElementById('editarGradoActual').value = estudiante.gradoActual || '';
             document.getElementById('editarSeccionActual').value = estudiante.seccionActual || '';
             document.getElementById('editarAnioAcademico').value = estudiante.añoAcademico || estudiante.anioAcademico || '';
+            document.getElementById('editarGradoActual').readOnly = true;
+            document.getElementById('editarSeccionActual').readOnly = true;
+            document.getElementById('editarAnioAcademico').readOnly = true;
+            document.getElementById('editarGradoActual').style.backgroundColor = '#e9ecef';
+            document.getElementById('editarSeccionActual').style.backgroundColor = '#e9ecef';
+            document.getElementById('editarAnioAcademico').style.backgroundColor = '#e9ecef';
             document.getElementById('editarEstadoEstudiante').value = estudiante.estadoEstudiante || 'ACTIVO';
             document.getElementById('editarNombreContactoEmergencia').value = estudiante.nombreContactoEmergencia || '';
             document.getElementById('editarTelefonoEmergencia').value = estudiante.telefonoEmergencia || '';
@@ -823,7 +830,7 @@
                 condicionesMedicas: document.getElementById('editarCondicionesMedicas').value.trim() || null,
                 tipoSangre: document.getElementById('editarTipoSangre').value || null,
                 gradoActual: estudianteOriginal.gradoActual || null,
-                seccionActual: document.getElementById('editarSeccionActual').value.trim() || estudianteOriginal.seccionActual || null,
+                seccionActual: estudianteOriginal.seccionActual || null,
                 añoAcademico: estudianteOriginal.añoAcademico || estudianteOriginal.anioAcademico || null
             };
             const response = await fetch(`${API_ESTUDIANTES}/${estudianteId}`, {
