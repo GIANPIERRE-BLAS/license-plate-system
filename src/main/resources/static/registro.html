@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro - Colegio César Vallejo</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #FFD700 0%, #DC143C 50%, #000000 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .register-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            width: 100%;
+            max-width: 400px;
+            border: 3px solid #FFD700;
+        }
+
+        .register-header {
+            background: linear-gradient(45deg, #DC143C 0%, #000000 100%);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+            position: relative;
+        }
+
+        .register-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: #FFD700;
+        }
+
+        .logo-container {
+            width: 80px;
+            height: 80px;
+            background: white;
+            border-radius: 50%;
+            margin: 0 auto 1rem auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 3px solid #FFD700;
+            box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .logo-container img {
+            width: 70px;
+            height: 70px;
+            object-fit: cover;
+            border-radius: 50%;
+        }
+
+        .logo-placeholder {
+            color: #DC143C;
+            font-size: 2rem;
+        }
+
+        .register-header h2 {
+            margin: 0;
+            font-weight: 600;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .register-header .school-name {
+            font-size: 0.9rem;
+            opacity: 0.95;
+            margin-top: 0.5rem;
+            font-weight: 300;
+            color: #FFD700;
+        }
+
+        .register-body {
+            padding: 2rem;
+            background: white;
+        }
+
+        .form-floating {
+            margin-bottom: 1rem;
+        }
+
+        .form-control, .form-select {
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 0.75rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: #DC143C;
+            box-shadow: 0 0 0 0.2rem rgba(220, 20, 60, 0.25);
+        }
+
+        .form-floating > label {
+            color: #666;
+        }
+
+        .form-floating > .form-control:focus ~ label,
+        .form-floating > .form-control:not(:placeholder-shown) ~ label,
+        .form-floating > .form-select:focus ~ label,
+        .form-floating > .form-select:not(:placeholder-shown) ~ label {
+            color: #DC143C;
+        }
+
+        .btn-register {
+            background: linear-gradient(45deg, #DC143C 0%, #000000 100%);
+            border: 2px solid #FFD700;
+            border-radius: 10px;
+            padding: 0.75rem;
+            font-weight: 600;
+            width: 100%;
+            transition: all 0.3s ease;
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-register::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 215, 0, 0.3), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .btn-register:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(220, 20, 60, 0.4);
+            border-color: #FFD700;
+        }
+
+        .btn-register:hover::before {
+            left: 100%;
+        }
+
+        .btn-register:active {
+            transform: translateY(0);
+        }
+
+        .alert {
+            border-radius: 10px;
+            border: none;
+        }
+
+        .alert-danger {
+            background: linear-gradient(45deg, rgba(220, 20, 60, 0.1), rgba(255, 215, 0, 0.1));
+            color: #DC143C;
+            border-left: 4px solid #DC143C;
+        }
+
+        .alert-success {
+            background: linear-gradient(45deg, rgba(40, 167, 69, 0.1), rgba(255, 215, 0, 0.1));
+            color: #28a745;
+            border-left: 4px solid #28a745;
+        }
+
+        .alert-info {
+            background: linear-gradient(45deg, rgba(23, 162, 184, 0.1), rgba(255, 215, 0, 0.1));
+            color: #17a2b8;
+            border-left: 4px solid #17a2b8;
+        }
+
+        .loading {
+            display: none;
+        }
+
+        .login-link {
+            text-align: center;
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 2px solid #FFD700;
+        }
+
+        .login-link a {
+            color: #DC143C;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .login-link a:hover {
+            color: #000000;
+            text-decoration: underline;
+            text-shadow: 1px 1px 2px rgba(255, 215, 0, 0.5);
+        }
+
+        .input-icon {
+            color: #DC143C;
+        }
+
+        .register-container {
+            animation: slideIn 0.6s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 100" fill="rgba(255,215,0,0.1)"><path d="M0,20 C150,60 350,0 500,20 C650,40 850,0 1000,20 L1000,100 L0,100 Z"></path></svg>') repeat-x;
+            animation: wave 15s linear infinite;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        @keyframes wave {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-1000px); }
+        }
+
+        .password-strength {
+            font-size: 0.8rem;
+            margin-top: 0.5rem;
+        }
+
+        .strength-weak { color: #dc3545; }
+        .strength-medium { color: #ffc107; }
+        .strength-strong { color: #28a745; }
+    </style>
+</head>
+<body>
+<div class="register-container">
+    <div class="register-header">
+        <div class="logo-container">
+            <img src="https://imgur.com/Un4G2Du.png" alt="Logo Colegio César Vallejo">
+        </div>
+        <h2>Crear Cuenta</h2>
+        <div class="school-name">Colegio César Vallejo</div>
+    </div>
+
+    <div class="register-body">
+        <div id="alertContainer"></div>
+
+        <form id="registerForm">
+            <div class="form-floating">
+                <input type="text" class="form-control" id="nombre" name="nombre" placeholder="Nombre completo" required minlength="2" maxlength="100">
+                <label for="nombre"><i class="fas fa-user me-2 input-icon"></i>Nombre completo</label>
+            </div>
+
+            <div class="form-floating">
+                <input type="email" class="form-control" id="email" name="email" placeholder="nombre@ejemplo.com" required>
+                <label for="email"><i class="fas fa-envelope me-2 input-icon"></i>Correo electrónico</label>
+            </div>
+
+            <div class="form-floating">
+                <input type="password" class="form-control" id="password" name="password" placeholder="Contraseña" required minlength="6">
+                <label for="password"><i class="fas fa-lock me-2 input-icon"></i>Contraseña</label>
+                <div id="passwordStrength" class="password-strength"></div>
+            </div>
+
+            <div class="form-floating">
+                <input type="password" class="form-control" id="confirmPassword" name="confirmPassword" placeholder="Confirmar contraseña" required>
+                <label for="confirmPassword"><i class="fas fa-lock me-2 input-icon"></i>Confirmar contraseña</label>
+            </div>
+
+            <div class="form-floating">
+                <input type="tel" class="form-control" id="telefono" name="telefono" placeholder="Teléfono" pattern="[0-9]{6,15}">
+                <label for="telefono"><i class="fas fa-phone me-2 input-icon"></i>Teléfono</label>
+            </div>
+
+            <div class="form-floating">
+                <input type="text" class="form-control" id="direccion" name="direccion" placeholder="Dirección" maxlength="200">
+                <label for="direccion"><i class="fas fa-map-marker-alt me-2 input-icon"></i>Dirección</label>
+            </div>
+
+            <div class="form-floating">
+                <select class="form-select" id="tipoDocumento" name="tipoDocumento" required>
+                    <option value="">Seleccione...</option>
+                    <option value="DNI">DNI</option>
+                    <option value="CE">Carné de Extranjería</option>
+                    <option value="PASAPORTE">Pasaporte</option>
+                </select>
+                <label for="tipoDocumento"><i class="fas fa-id-card me-2 input-icon"></i>Tipo de documento</label>
+            </div>
+
+            <div class="form-floating">
+                <input type="text" class="form-control" id="numeroDocumento" name="numeroDocumento" placeholder="Número de documento" maxlength="20" required>
+                <label for="numeroDocumento"><i class="fas fa-hashtag me-2 input-icon"></i>Número de documento</label>
+            </div>
+
+            <div class="form-floating">
+                <select class="form-select" id="rol" name="rol" required>
+                    <option value="PADRE" selected>Padre de Familia</option>
+                    <option value="ADMIN">Administrador</option>
+                    <option value="PROFESOR">Profesor</option>
+                    <option value="SECRETARIO">Secretario</option>
+                </select>
+                <label for="rol"><i class="fas fa-users me-2 input-icon"></i>Tipo de usuario</label>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-register">
+        <span class="register-text">
+            <i class="fas fa-user-plus me-2"></i>Crear Cuenta
+        </span>
+                <span class="loading">
+            <i class="fas fa-spinner fa-spin me-2"></i>Creando cuenta...
+        </span>
+            </button>
+        </form>
+
+        <div class="login-link">
+            <p class="mb-0">¿Ya tienes cuenta? <a href="login.html">Inicia sesión aquí</a></p>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+<script>
+    const API_BASE_URL = 'http://localhost:8080/api';
+
+    const registerForm = document.getElementById('registerForm');
+    const alertContainer = document.getElementById('alertContainer');
+    const registerButton = registerForm.querySelector('button[type="submit"]');
+    const registerText = registerButton.querySelector('.register-text');
+    const loadingText = registerButton.querySelector('.loading');
+    const passwordInput = document.getElementById('password');
+    const confirmPasswordInput = document.getElementById('confirmPassword');
+    const passwordStrength = document.getElementById('passwordStrength');
+
+    function showAlert(message, type = 'danger') {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+        alertDiv.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+
+        alertContainer.innerHTML = '';
+        alertContainer.appendChild(alertDiv);
+
+        setTimeout(() => {
+            if (alertDiv.parentNode) {
+                alertDiv.remove();
+            }
+        }, 7000);
+    }
+
+    function setLoading(loading) {
+        registerButton.disabled = loading;
+        if (loading) {
+            registerText.style.display = 'none';
+            loadingText.style.display = 'inline';
+        } else {
+            registerText.style.display = 'inline';
+            loadingText.style.display = 'none';
+        }
+    }
+
+    function checkPasswordStrength(password) {
+        let strength = 0;
+        let feedback = '';
+
+        if (password.length >= 8) strength++;
+        if (/[a-z]/.test(password)) strength++;
+        if (/[A-Z]/.test(password)) strength++;
+        if (/[0-9]/.test(password)) strength++;
+        if (/[^A-Za-z0-9]/.test(password)) strength++;
+
+        switch (strength) {
+            case 0:
+            case 1:
+            case 2:
+                feedback = '<span class="strength-weak">Contraseña débil</span>';
+                break;
+            case 3:
+            case 4:
+                feedback = '<span class="strength-medium">Contraseña media</span>';
+                break;
+            case 5:
+                feedback = '<span class="strength-strong">Contraseña fuerte</span>';
+                break;
+        }
+
+        return feedback;
+    }
+
+    passwordInput.addEventListener('input', () => {
+        const password = passwordInput.value;
+        if (password) {
+            passwordStrength.innerHTML = checkPasswordStrength(password);
+        } else {
+            passwordStrength.innerHTML = '';
+        }
+    });
+
+    function validatePasswordMatch() {
+        const password = passwordInput.value;
+        const confirmPassword = confirmPasswordInput.value;
+
+        if (confirmPassword && password !== confirmPassword) {
+            confirmPasswordInput.setCustomValidity('Las contraseñas no coinciden');
+            return false;
+        } else {
+            confirmPasswordInput.setCustomValidity('');
+            return true;
+        }
+    }
+
+    confirmPasswordInput.addEventListener('input', validatePasswordMatch);
+    passwordInput.addEventListener('input', validatePasswordMatch);
+
+    registerForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        if (!validatePasswordMatch()) {
+            showAlert('Las contraseñas no coinciden.');
+            return;
+        }
+
+        const formData = new FormData(registerForm);
+        const registerData = {
+            nombre: formData.get('nombre').trim(),
+            email: formData.get('email').trim().toLowerCase(),
+            password: formData.get('password'),
+            telefono: formData.get('telefono')?.trim() || null,
+            direccion: formData.get('direccion')?.trim() || null,
+            tipoDocumento: formData.get('tipoDocumento') || null,
+            numeroDocumento: formData.get('numeroDocumento')?.trim() || null,
+            rol: formData.get('rol')
+        };
+
+        if (!registerData.nombre || !registerData.email || !registerData.password) {
+            showAlert('Por favor, completa todos los campos obligatorios.');
+            return;
+        }
+
+        if (registerData.nombre.length < 2) {
+            showAlert('El nombre debe tener al menos 2 caracteres.');
+            return;
+        }
+
+        if (registerData.password.length < 6) {
+            showAlert('La contraseña debe tener al menos 6 caracteres.');
+            return;
+        }
+
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(registerData.email)) {
+            showAlert('Por favor, ingresa un email válido.');
+            return;
+        }
+
+        try {
+            setLoading(true);
+
+            const response = await fetch(`${API_BASE_URL}/auth/registro`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(registerData)
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                showAlert(
+                    `¡Cuenta creada exitosamente! <br>
+                     Bienvenido, ${registerData.nombre}. <br>
+                     Ahora puedes iniciar sesión con tu email y contraseña.`,
+                    'success'
+                );
+
+                registerForm.reset();
+                passwordStrength.innerHTML = '';
+
+                setTimeout(() => {
+                    window.location.href = 'login.html';
+                }, 3000);
+
+            } else {
+                if (data.email && data.email.includes('Ya existe')) {
+                    showAlert('Ya existe una cuenta registrada con este email. <a href="login.html">¿Quieres iniciar sesión?</a>');
+                } else if (typeof data === 'object' && (data.nombre || data.email || data.password)) {
+                    let errorMsg = 'Errores de validación:<br>';
+                    if (data.nombre) errorMsg += `• ${data.nombre}<br>`;
+                    if (data.email) errorMsg += `• ${data.email}<br>`;
+                    if (data.password) errorMsg += `• ${data.password}<br>`;
+                    showAlert(errorMsg);
+                } else if (data.mensaje) {
+                    showAlert(data.mensaje);
+                } else {
+                    showAlert('Error al crear la cuenta. Por favor, intenta de nuevo.');
+                }
+            }
+
+        } catch (error) {
+            console.error('Error:', error);
+            showAlert('Error de conexión. Por favor, verifica tu conexión a internet.');
+        } finally {
+            setLoading(false);
+        }
+    });
+
+    window.addEventListener('load', () => {
+        const token = localStorage.getItem('token');
+        const usuario = localStorage.getItem('usuario');
+
+        if (token && usuario) {
+            try {
+                const parsedUsuario = JSON.parse(usuario);
+                showAlert(`Ya tienes una sesión activa como ${parsedUsuario.nombre}. Redirigiendo...`, 'info');
+
+                setTimeout(() => {
+                    if (parsedUsuario.rol === 'ADMIN') {
+                        window.location.href = 'admin-dashboard.html';
+                    } else {
+                        window.location.href = 'padre-dashboard.html';
+                    }
+                }, 2000);
+            } catch (e) {
+                localStorage.removeItem('token');
+                localStorage.removeItem('usuario');
+            }
+        }
+    });
+
+    const inputs = ['nombre', 'email', 'password', 'confirmPassword'];
+    inputs.forEach(inputId => {
+        document.getElementById(inputId).addEventListener('input', () => {
+            const existingAlert = alertContainer.querySelector('.alert');
+            if (existingAlert && !existingAlert.classList.contains('alert-success')) {
+                alertContainer.innerHTML = '';
+            }
+        });
+    });
+
+    document.getElementById('nombre').addEventListener('input', (e) => {
+        const input = e.target;
+        const words = input.value.split(' ');
+        const formatted = words.map(word => {
+            return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+        }).join(' ');
+        input.value = formatted;
+    });
+
+    document.getElementById('email').addEventListener('input', (e) => {
+        e.target.value = e.target.value.toLowerCase();
+    });
+
+    function createGoldenParticle() {
+        const particle = document.createElement('div');
+        particle.style.cssText = `
+            position: fixed;
+            width: 4px;
+            height: 4px;
+            background: #FFD700;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: -1;
+            opacity: 0.7;
+            animation: float 6s linear infinite;
+            left: ${Math.random() * 100}vw;
+            top: 100vh;
+        `;
+
+        document.body.appendChild(particle);
+
+        setTimeout(() => {
+            particle.remove();
+        }, 6000);
+    }
+
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes float {
+            to {
+                transform: translateY(-100vh) rotate(360deg);
+                opacity: 0;
+            }
+        }
+    `;
+    document.head.appendChild(style);
+
+    setInterval(createGoldenParticle, 300);
+</script>
+</body>
+</html>

@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Gestión de Profesores - Colegio César Vallejo</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Institutional Colors */
+            --institutional-yellow: #FFD700;
+            --institutional-red: #DC143C;
+            --institutional-white: #FFFFFF;
+            --institutional-dark-red: #B71C1C;
+            --institutional-light-yellow: #FFF9C4;
+            --institutional-gold: #DAA520;
+            /* Status Colors */
+            --success-color: #28a745;
+            --warning-color: #ffc107;
+            --danger-color: var(--institutional-red);
+            --info-color: #17a2b8;
+            --light-color: #f8f9fa;
+            --dark-color: #343a40;
+            --shadow-color: rgba(220, 20, 60, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, var(--institutional-red) 0%, var(--institutional-dark-red) 50%, var(--institutional-yellow) 100%);
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(220, 20, 60, 0.95) 0%, rgba(183, 28, 28, 0.95) 50%, rgba(255, 215, 0, 0.95) 100%);
+            z-index: -1;
+        }
+
+        .navbar {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(20px);
+            box-shadow: 0 8px 32px var(--shadow-color);
+            border-bottom: 3px solid var(--institutional-yellow);
+        }
+
+        .navbar-brand {
+            font-weight: 800;
+            font-size: 1.5rem;
+            color: var(--institutional-red) !important;
+        }
+
+        .navbar-brand i {
+            color: var(--institutional-yellow);
+            text-shadow: 2px 2px 4px var(--shadow-color);
+        }
+
+        .admin-badge {
+            background: linear-gradient(135deg, var(--institutional-yellow), var(--institutional-gold));
+            color: var(--institutional-red);
+            padding: 0.25rem 0.75rem;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            margin-left: 10px;
+            box-shadow: 0 2px 10px rgba(255, 215, 0, 0.3);
+        }
+
+        .main-container {
+            margin-top: 5rem;
+            padding: 0 1rem;
+        }
+
+        .card {
+            border: none;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px var(--shadow-color);
+            background: rgba(255, 255, 255, 0.95);
+            transition: all 0.4s ease;
+            overflow: hidden;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 25px 50px rgba(220, 20, 60, 0.15);
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, var(--institutional-red), var(--institutional-dark-red));
+            color: var(--institutional-white);
+            border-radius: 20px 20px 0 0;
+            padding: 2rem;
+            position: relative;
+        }
+
+        .card-header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 100%;
+            height: 200%;
+            background: var(--institutional-yellow);
+            opacity: 0.1;
+            transform: rotate(45deg);
+        }
+
+        .card-header h4 {
+            position: relative;
+            z-index: 1;
+            font-weight: 700;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 20px;
+            padding: 2rem;
+            text-align: center;
+            transition: all 0.4s ease;
+            border: 3px solid transparent;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-15px) scale(1.02);
+            border-color: var(--institutional-yellow);
+        }
+
+        .stat-icon {
+            font-size: 3.5rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, var(--institutional-red), var(--institutional-yellow));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--institutional-red), var(--institutional-dark-red));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .stat-label {
+            color: var(--institutional-red);
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+            letter-spacing: 1px;
+        }
+
+        .form-control, .form-select {
+            border: 2px solid #e9ecef;
+            border-radius: 15px;
+            padding: 1rem;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: var(--institutional-yellow);
+            box-shadow: 0 0 0 0.25rem rgba(255, 215, 0, 0.25);
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: var(--institutional-red);
+            margin-bottom: 0.8rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--institutional-red), var(--institutional-dark-red));
+            border: none;
+            border-radius: 15px;
+            padding: 0.75rem 2rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 25px rgba(220, 20, 60, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 35px rgba(220, 20, 60, 0.4);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, var(--light-color), #dee2e6);
+            color: var(--institutional-red);
+            border: none;
+            border-radius: 15px;
+            font-weight: 600;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, var(--danger-color), var(--institutional-dark-red));
+            border: none;
+            border-radius: 15px;
+            font-weight: 600;
+        }
+
+        .modal-content {
+            border-radius: 20px;
+            border: 3px solid var(--institutional-yellow);
+            box-shadow: 0 25px 50px rgba(220, 20, 60, 0.2);
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, var(--institutional-red), var(--institutional-dark-red));
+            border-radius: 17px 17px 0 0;
+            border-bottom: 3px solid var(--institutional-yellow);
+        }
+
+        .btn-close-white {
+            filter: invert(1);
+        }
+
+        .table {
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 15px;
+            overflow: hidden;
+        }
+
+        .table thead {
+            background: linear-gradient(135deg, var(--institutional-yellow), var(--institutional-gold));
+            color: var(--institutional-red);
+        }
+
+        .table tbody tr:hover {
+            background: rgba(255, 215, 0, 0.1);
+        }
+
+        .badge {
+            padding: 0.5rem 1rem;
+            border-radius: 25px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .badge-success {
+            background: linear-gradient(135deg, #d4edda, #c3e6cb);
+            color: #155724;
+        }
+
+        .badge-danger {
+            background: linear-gradient(135deg, #f8d7da, #f5c6cb);
+            color: var(--institutional-red);
+        }
+
+        .badge-admin {
+            background: linear-gradient(135deg, var(--institutional-yellow), var(--institutional-gold));
+            color: var(--institutional-red);
+        }
+
+        .badge-docente {
+            background: linear-gradient(135deg, #d1ecf1, #bee5eb);
+            color: #0c5460;
+        }
+
+        .badge-estudiante {
+            background: linear-gradient(135deg, #e2e3e5, #d6d8db);
+            color: #383d41;
+        }
+
+        .badge-padre {
+            background: linear-gradient(135deg, #d4edda, #c3e6cb);
+            color: #155724;
+        }
+
+        .pagination .page-item.active .page-link {
+            background: linear-gradient(135deg, var(--institutional-red), var(--institutional-dark-red));
+            border-color: var(--institutional-yellow);
+            color: var(--institutional-white);
+        }
+
+        .pagination .page-link {
+            color: var(--institutional-red);
+            border-radius: 10px;
+            margin: 0 5px;
+            transition: all 0.3s ease;
+        }
+
+        .pagination .page-link:hover {
+            background: rgba(255, 215, 0, 0.2);
+            border-color: var(--institutional-yellow);
+        }
+
+        @media (max-width: 768px) {
+            .main-container { padding: 0 0.5rem; }
+            .card-header { padding: 1.5rem; }
+            .stat-card { padding: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+<!-- NAVBAR -->
+<nav class="navbar navbar-expand-lg navbar-light fixed-top">
+    <div class="container-fluid">
+        <a class="navbar-brand d-flex align-items-center" href="admin-dashboard.html">
+            <i class="fas fa-graduation-cap me-2"></i>
+            <span>César Vallejo</span>
+            <span class="admin-badge">ADMINISTRADOR</span>
+        </a>
+        <div class="navbar-nav ms-auto d-flex flex-row align-items-center">
+            <div class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #c0392b, #f1c40f); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 10px;">
+                        <i class="fas fa-user-shield text-white"></i>
+                    </div>
+                    <span id="nombreUsuario" style="color: #c0392b; font-weight: 600;">Cargando...</span>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li><a class="dropdown-item" href="admin-dashboard.html"><i class="fas fa-home me-2"></i>Dashboard</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item text-danger" href="#" onclick="cerrarSesion()"><i class="fas fa-sign-out-alt me-2"></i>Cerrar Sesión</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<!-- CONTENIDO -->
+<div class="container-fluid main-container">
+    <!-- Estadísticas -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card animate__animated animate__fadeInDown">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <h4 class="mb-0"><i class="fas fa-chalkboard-teacher me-2"></i>Gestión de Profesores</h4>
+                        <p class="mb-0">Administra los profesores registrados en el sistema</p>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row" id="statsContainer">
+                        <div class="col-md-3 col-sm-6 col-6 mb-3">
+                            <div class="stat-card">
+                                <div class="stat-icon"><i class="fas fa-users"></i></div>
+                                <div class="stat-number" id="totalProfesores">0</div>
+                                <div class="stat-label">Total Profesores</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-sm-6 col-6 mb-3">
+                            <div class="stat-card">
+                                <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
+                                <div class="stat-number" id="profesoresActivos">0</div>
+                                <div class="stat-label">Profesores Activos</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros / acciones -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card animate__animated animate__fadeInUp">
+                <div class="card-body d-flex justify-content-between align-items-center flex-wrap">
+                    <div class="d-flex gap-3 flex-wrap align-items-center">
+                        <input type="text" id="inputBusqueda" class="form-control" placeholder="Buscar por nombre, apellido, DNI o email..." style="min-width: 300px;">
+                        <select id="filtroEstado" class="form-select" style="width:160px;">
+                            <option value="">Todos los estados</option>
+                            <option value="true">Activos</option>
+                            <option value="false">Inactivos</option>
+                        </select>
+                        <button class="btn btn-primary" onclick="buscarProfesores()"><i class="fas fa-search me-2"></i>Buscar</button>
+                    </div>
+                    <button class="btn btn-primary" onclick="abrirModalNuevo()"><i class="fas fa-plus me-2"></i>Nuevo Profesor</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card animate__animated animate__fadeInUp">
+                <div class="card-header">
+                    <h4 class="mb-0"><i class="fas fa-table me-2"></i>Lista de Profesores</h4>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nombre</th>
+                                <th>Apellido</th>
+                                <th>DNI</th>
+                                <th>Email</th>
+                                <th>Teléfono</th>
+                                <th>Especialidad</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                            </thead>
+                            <tbody id="tablaProfesores">
+                            <tr><td colspan="9" class="text-center">Cargando profesores...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Crear / Editar -->
+<div class="modal fade" id="modalProfesor" tabindex="-1" aria-labelledby="modalProfesorLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalProfesorLabel"><i class="fas fa-user-plus me-2"></i>Nuevo Profesor</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formProfesor" onsubmit="guardarProfesor(event)">
+                    <input type="hidden" id="profesorId">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="nombre" class="form-label">Nombre *</label>
+                            <input type="text" id="nombre" class="form-control" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="apellido" class="form-label">Apellido *</label>
+                            <input type="text" id="apellido" class="form-control" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="dni" class="form-label">DNI *</label>
+                            <input type="text" id="dni" class="form-control" required maxlength="20">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="email" class="form-label">Correo Electrónico *</label>
+                            <input type="email" id="email" class="form-control" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="telefono" class="form-label">Teléfono</label>
+                            <input type="text" id="telefono" class="form-control" maxlength="15">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="especialidad" class="form-label">Especialidad *</label>
+                            <input type="text" id="especialidad" class="form-control" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="activo" class="form-label">Estado</label>
+                            <select id="activo" class="form-select">
+                                <option value="true">Activo</option>
+                                <option value="false">Inactivo</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-end gap-2 mt-3">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary"><i class="fas fa-save me-2"></i>Guardar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Detalles -->
+<div class="modal fade" id="modalDetalles" tabindex="-1" aria-labelledby="modalDetallesLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalDetallesLabel"><i class="fas fa-info-circle me-2"></i>Detalles del Profesor</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body" id="detallesProfesor"></div>
+            <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button></div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Eliminar -->
+<div class="modal fade" id="modalEliminar" tabindex="-1" aria-labelledby="modalEliminarLabel" aria-hidden="true">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalEliminarLabel"><i class="fas fa-exclamation-triangle me-2"></i>Confirmar Eliminación</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Está seguro que desea desactivar este profesor?</p>
+                <p class="text-danger">Esta acción cambiará el estado a inactivo.</p>
+                <p><strong id="profesorEliminarNombre"></strong></p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button class="btn btn-danger" onclick="confirmarEliminar()"><i class="fas fa-trash me-2"></i>Desactivar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast -->
+<div class="toast-container position-fixed top-0 end-0 p-3" style="z-index:1060">
+    <div id="notificationToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header">
+            <i class="fas fa-bell me-2" style="color:#c0392b;"></i>
+            <strong class="me-auto" style="color:#c0392b;">César Vallejo Admin</strong>
+            <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Cerrar"></button>
+        </div>
+        <div class="toast-body" id="toastMessage"></div>
+    </div>
+</div>
+
+<!-- SCRIPTS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    const API_URL = 'http://localhost:8080/api/profesores';
+    let token = '';
+    let usuarioActual = null;
+    let profesoresData = [];
+    let profesorIdEliminar = null;
+    let modalProfesorInstance = null;
+    let modalEliminarInstance = null;
+    let modalDetallesInstance = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+
+        modalProfesorInstance = new bootstrap.Modal(document.getElementById('modalProfesor'));
+        modalEliminarInstance = new bootstrap.Modal(document.getElementById('modalEliminar'));
+        modalDetallesInstance = new bootstrap.Modal(document.getElementById('modalDetalles'));
+
+        token = localStorage.getItem('token') || '';
+        if (!token) {
+        }
+
+        validarSesion().finally(() => {
+            cargarProfesores();
+        });
+
+
+        const inputBusqueda = document.getElementById('inputBusqueda');
+        if (inputBusqueda) {
+            inputBusqueda.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') buscarProfesores();
+            });
+        }
+
+
+        const filtroEstado = document.getElementById('filtroEstado');
+        if (filtroEstado) filtroEstado.addEventListener('change', aplicarFiltrosCliente);
+    });
+
+
+    async function validarSesion() {
+        if (!token) return;
+        try {
+            const res = await fetch('http://localhost:8080/api/auth/validate', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (!res.ok) {
+                console.warn('Validación de sesión no OK');
+                return;
+            }
+            const data = await res.json();
+            if (data?.valido) {
+                usuarioActual = data.usuario;
+                const nombreUsuarioEl = document.getElementById('nombreUsuario');
+                if (nombreUsuarioEl) nombreUsuarioEl.textContent = usuarioActual.nombre || 'ADMIN';
+                if (usuarioActual.rol !== 'ADMIN') {
+                    mostrarError('No tienes permisos para acceder a esta página');
+
+                }
+            }
+        } catch (err) {
+            console.error('Error validando sesión:', err);
+        }
+    }
+
+    async function cargarProfesores() {
+        try {
+            const response = await fetch(API_URL, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (!response.ok) throw new Error('Error al cargar profesores, status ' + response.status);
+            const data = await response.json();
+            if (!Array.isArray(data)) {
+                console.warn('Respuesta no es array:', data);
+                profesoresData = [];
+            } else {
+                profesoresData = data;
+            }
+            renderizarTabla(profesoresData);
+            actualizarEstadisticas();
+        } catch (err) {
+            console.error('Error al cargar profesores:', err);
+            profesoresData = [];
+            renderizarTabla(profesoresData);
+            actualizarEstadisticas();
+            mostrarError('Error al cargar los profesores');
+        }
+    }
+
+    function actualizarEstadisticas() {
+        const total = profesoresData.length;
+        const activos = profesoresData.filter(p => p.activo).length;
+        const elTotal = document.getElementById('totalProfesores');
+        const elActivos = document.getElementById('profesoresActivos');
+        if (elTotal) elTotal.textContent = total;
+        if (elActivos) elActivos.textContent = activos;
+    }
+
+    function renderizarTabla(profesores) {
+        const tbody = document.getElementById('tablaProfesores');
+        if (!tbody) return;
+        if (!profesores || profesores.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="9" class="text-center">No se encontraron profesores</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = profesores.map(profesor => {
+
+            const nombreFull = ((profesor.nombre || '') + ' ' + (profesor.apellido || '')).replace(/'/g, "\\'");
+            return `
+                <tr>
+                    <td>${profesor.id ?? '-'}</td>
+                    <td>${profesor.nombre ?? '-'}</td>
+                    <td>${profesor.apellido ?? '-'}</td>
+                    <td>${profesor.dni ?? '-'}</td>
+                    <td>${profesor.email ?? '-'}</td>
+                    <td>${profesor.telefono ?? '-'}</td>
+                    <td>${profesor.especialidad ?? '-'}</td>
+                    <td><span class="badge ${profesor.activo ? 'bg-success' : 'bg-danger'}">${profesor.activo ? 'Activo' : 'Inactivo'}</span></td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-primary" onclick="verDetalles(${profesor.id})" title="Ver"><i class="fas fa-eye"></i></button>
+                        <button class="btn btn-sm btn-outline-warning" onclick="editarProfesor(${profesor.id})" title="Editar"><i class="fas fa-edit"></i></button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="abrirModalEliminar(${profesor.id}, '${nombreFull}')" title="Desactivar"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    function buscarProfesores() {
+        const termino = (document.getElementById('inputBusqueda')?.value || '').trim().toLowerCase();
+        const estado = (document.getElementById('filtroEstado')?.value ?? '');
+        let resultado = profesoresData.slice();
+
+        if (termino) {
+            resultado = resultado.filter(p =>
+                (p.nombre || '').toLowerCase().includes(termino) ||
+                (p.apellido || '').toLowerCase().includes(termino) ||
+                (p.email || '').toLowerCase().includes(termino) ||
+                (p.dni || '').toLowerCase().includes(termino)
+            );
+        }
+
+        if (estado === 'true') resultado = resultado.filter(p => p.activo);
+        if (estado === 'false') resultado = resultado.filter(p => !p.activo);
+
+        renderizarTabla(resultado);
+    }
+
+    function aplicarFiltrosCliente() {
+        buscarProfesores();
+    }
+
+    function abrirModalNuevo() {
+        document.getElementById('modalProfesorLabel').innerHTML = '<i class="fas fa-user-plus me-2"></i>Nuevo Profesor';
+        const form = document.getElementById('formProfesor');
+        if (form) form.reset();
+        const idEl = document.getElementById('profesorId');
+        if (idEl) idEl.value = '';
+        const activoEl = document.getElementById('activo');
+        if (activoEl) activoEl.value = 'true';
+        modalProfesorInstance.show();
+    }
+
+    async function editarProfesor(id) {
+        try {
+            const res = await fetch(`${API_URL}/${id}`, { headers: { 'Authorization': `Bearer ${token}` }});
+            if (!res.ok) throw new Error('Error al cargar profesor');
+            const profesor = await res.json();
+            document.getElementById('modalProfesorLabel').textContent = 'Editar Profesor';
+            document.getElementById('profesorId').value = profesor.id ?? '';
+            document.getElementById('nombre').value = profesor.nombre ?? '';
+            document.getElementById('apellido').value = profesor.apellido ?? '';
+            document.getElementById('dni').value = profesor.dni ?? '';
+            document.getElementById('email').value = profesor.email ?? '';
+            document.getElementById('telefono').value = profesor.telefono ?? '';
+            document.getElementById('especialidad').value = profesor.especialidad ?? '';
+            document.getElementById('activo').value = (profesor.activo === true) ? 'true' : 'false';
+            modalProfesorInstance.show();
+        } catch (err) {
+            console.error(err);
+            mostrarError('Error al cargar el profesor');
+        }
+    }
+
+    async function guardarProfesor(event) {
+        event.preventDefault();
+        const id = document.getElementById('profesorId').value;
+        const datos = {
+            nombre: document.getElementById('nombre').value,
+            apellido: document.getElementById('apellido').value,
+            dni: document.getElementById('dni').value,
+            email: document.getElementById('email').value,
+            telefono: document.getElementById('telefono').value || null,
+            especialidad: document.getElementById('especialidad').value,
+            activo: document.getElementById('activo').value === 'true'
+        };
+
+        try {
+            const url = id ? `${API_URL}/${id}` : API_URL;
+            const method = id ? 'PUT' : 'POST';
+            const res = await fetch(url, {
+                method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(datos)
+            });
+            if (!res.ok) {
+                let text = await res.text();
+                try {
+                    const j = JSON.parse(text);
+                    throw new Error(j.mensaje || j.message || text || 'Error al guardar');
+                } catch (e) {
+                    throw new Error(text || 'Error al guardar');
+                }
+            }
+            modalProfesorInstance.hide();
+            mostrarExito(id ? 'Profesor actualizado correctamente' : 'Profesor creado correctamente');
+            await cargarProfesores();
+        } catch (err) {
+            console.error('Error guardarProfesor:', err);
+            mostrarError(err.message || 'Error al guardar el profesor');
+        }
+    }
+
+    async function verDetalles(id) {
+        try {
+            const res = await fetch(`${API_URL}/${id}`, { headers: { 'Authorization': `Bearer ${token}` }});
+            if (!res.ok) throw new Error('Error al cargar detalles');
+            const profesor = await res.json();
+            const html = `
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>ID:</strong> ${profesor.id ?? '-'}</p>
+                        <p><strong>Nombre:</strong> ${profesor.nombre ?? '-'}</p>
+                        <p><strong>Apellido:</strong> ${profesor.apellido ?? '-'}</p>
+                        <p><strong>DNI:</strong> ${profesor.dni ?? '-'}</p>
+                        <p><strong>Email:</strong> ${profesor.email ?? '-'}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Teléfono:</strong> ${profesor.telefono ?? '-'}</p>
+                        <p><strong>Especialidad:</strong> ${profesor.especialidad ?? '-'}</p>
+                        <p><strong>Estado:</strong> <span class="badge ${profesor.activo ? 'bg-success' : 'bg-danger'}">${profesor.activo ? 'Activo' : 'Inactivo'}</span></p>
+                    </div>
+                </div>`;
+            document.getElementById('detallesProfesor').innerHTML = html;
+            modalDetallesInstance.show();
+        } catch (err) {
+            console.error(err);
+            mostrarError('Error al cargar los detalles');
+        }
+    }
+
+    function abrirModalEliminar(id, nombre) {
+        profesorIdEliminar = id;
+        document.getElementById('profesorEliminarNombre').textContent = nombre || '';
+        modalEliminarInstance.show();
+    }
+
+    async function confirmarEliminar() {
+        if (!profesorIdEliminar) return;
+        try {
+            const res = await fetch(`${API_URL}/${profesorIdEliminar}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (!res.ok) throw new Error('Error al desactivar');
+            modalEliminarInstance.hide();
+            mostrarExito('Profesor desactivado correctamente');
+            await cargarProfesores();
+        } catch (err) {
+            console.error(err);
+            mostrarError('Error al desactivar el profesor');
+        }
+    }
+
+    async function cerrarSesion() {
+        try {
+            await fetch('http://localhost:8080/api/auth/logout', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+        } catch (err) {
+            console.warn('Error cerrar sesión:', err);
+        }
+        localStorage.removeItem('token');
+        window.location.href = 'login.html';
+    }
+
+    function mostrarExito(mensaje) {
+        const toastEl = document.getElementById('notificationToast');
+        document.getElementById('toastMessage').textContent = mensaje;
+        toastEl.classList.remove('bg-danger');
+        new bootstrap.Toast(toastEl).show();
+    }
+    function mostrarError(mensaje) {
+        const toastEl = document.getElementById('notificationToast');
+        document.getElementById('toastMessage').textContent = mensaje;
+        toastEl.classList.add('bg-danger');
+        new bootstrap.Toast(toastEl).show();
+    }
+</script>
+</body>
+</html>

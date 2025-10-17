@@ -1,0 +1,1234 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Gestión de Estudiantes - Colegio César Vallejo</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Institutional Colors */
+            --institutional-yellow: #FFD700;
+            --institutional-red: #DC143C;
+            --institutional-white: #FFFFFF;
+            --institutional-dark-red: #B71C1C;
+            --institutional-light-yellow: #FFF9C4;
+            --institutional-gold: #DAA520;
+            /* Status Colors */
+            --success-color: #28a745;
+            --warning-color: #ffc107;
+            --danger-color: var(--institutional-red);
+            --info-color: #17a2b8;
+            --light-color: #f8f9fa;
+            --dark-color: #343a40;
+            --shadow-color: rgba(220, 20, 60, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        /* 🎨 Estilos para Formularios Institucionales César Vallejo */
+
+.form-control, .form-select {
+    border: 2px solid #e9ecef;
+    border-radius: 15px;
+    padding: 1rem;
+    transition: all 0.3s ease;
+    font-weight: 500;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: var(--institutional-yellow);
+    box-shadow: 0 0 0 0.25rem rgba(255, 215, 0, 0.25);
+}
+
+.form-label {
+    font-weight: 600;
+    color: var(--institutional-red);
+    margin-bottom: 0.8rem;
+}
+
+/* 🧾 Modales (para formularios emergentes) */
+.modal-content {
+    border-radius: 20px;
+    border: 3px solid var(--institutional-yellow);
+    box-shadow: 0 25px 50px rgba(220, 20, 60, 0.2);
+}
+
+.modal-header {
+    background: linear-gradient(135deg, var(--institutional-red), var(--institutional-dark-red));
+    border-radius: 17px 17px 0 0;
+    border-bottom: 3px solid var(--institutional-yellow);
+}
+
+/* ✅ Botones del formulario */
+.btn-primary {
+    background: linear-gradient(135deg, var(--institutional-red), var(--institutional-dark-red));
+    border: none;
+    border-radius: 15px;
+    padding: 0.75rem 2rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 8px 25px rgba(220, 20, 60, 0.3);
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-primary::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, var(--institutional-yellow), transparent);
+    opacity: 0.3;
+    transition: left 0.6s ease;
+}
+
+.btn-primary:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 15px 35px rgba(220, 20, 60, 0.4);
+}
+
+.btn-primary:hover::before {
+    left: 100%;
+}
+
+.btn-success {
+    background: linear-gradient(135deg, var(--pago-pagado), #20c997);
+    border: none;
+    border-radius: 15px;
+    font-weight: 600;
+}
+
+.btn-warning {
+    background: linear-gradient(135deg, var(--institutional-yellow), var(--institutional-gold));
+    border: none;
+    border-radius: 15px;
+    color: var(--institutional-red);
+    font-weight: 600;
+}
+
+.btn-danger {
+    background: linear-gradient(135deg, var(--pago-vencido), var(--institutional-dark-red));
+    border: none;
+    border-radius: 15px;
+    font-weight: 600;
+}
+
+/* ⚠️ Alertas de validación del formulario */
+.alert {
+    border-radius: 15px;
+    border: none;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.alert-warning {
+    background: linear-gradient(135deg, var(--institutional-light-yellow), rgba(255, 215, 0, 0.1));
+    color: var(--institutional-red);
+    border-left: 5px solid var(--institutional-yellow);
+}
+
+.alert-success {
+    background: linear-gradient(135deg, #d4edda, rgba(40, 167, 69, 0.1));
+    color: #155724;
+    border-left: 5px solid var(--pago-pagado);
+}
+
+.alert-danger {
+    background: linear-gradient(135deg, #f8d7da, rgba(220, 20, 60, 0.1));
+    color: var(--institutional-red);
+    border-left: 5px solid var(--pago-vencido);
+}
+
+
+        body {
+            background: linear-gradient(135deg, var(--institutional-red) 0%, var(--institutional-dark-red) 50%, var(--institutional-yellow) 100%);
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(220, 20, 60, 0.95) 0%, rgba(183, 28, 28, 0.95) 50%, rgba(255, 215, 0, 0.95) 100%);
+            z-index: -1;
+        }
+
+        .navbar {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(20px);
+            box-shadow: 0 8px 32px var(--shadow-color);
+            border-bottom: 3px solid var(--institutional-yellow);
+        }
+
+        .navbar-brand {
+            font-weight: 800;
+            font-size: 1.5rem;
+            color: var(--institutional-red) !important;
+        }
+
+        .navbar-brand i {
+            color: var(--institutional-yellow);
+            text-shadow: 2px 2px 4px var(--shadow-color);
+        }
+
+        .admin-badge {
+            background: linear-gradient(135deg, var(--institutional-yellow), var(--institutional-gold));
+            color: var(--institutional-red);
+            padding: 0.25rem 0.75rem;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            margin-left: 10px;
+            box-shadow: 0 2px 10px rgba(255, 215, 0, 0.3);
+        }
+
+        .main-container {
+            margin-top: 5rem;
+            padding: 0 1rem;
+        }
+
+        .card {
+            border: none;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px var(--shadow-color);
+            background: rgba(255, 255, 255, 0.95);
+            transition: all 0.4s ease;
+            overflow: hidden;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 25px 50px rgba(220, 20, 60, 0.15);
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, var(--institutional-red), var(--institutional-dark-red));
+            color: var(--institutional-white);
+            border-radius: 20px 20px 0 0;
+            padding: 2rem;
+            position: relative;
+        }
+
+        .card-header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 100%;
+            height: 200%;
+            background: var(--institutional-yellow);
+            opacity: 0.1;
+            transform: rotate(45deg);
+        }
+
+        .card-header h4, .card-header h5 {
+            position: relative;
+            z-index: 1;
+            font-weight: 700;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 20px;
+            padding: 2rem;
+            text-align: center;
+            transition: all 0.4s ease;
+            border: 3px solid transparent;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 5px;
+            background: linear-gradient(90deg, var(--institutional-yellow), var(--institutional-red));
+        }
+
+        .stat-card:hover {
+            transform: translateY(-15px) scale(1.02);
+            border-color: var(--institutional-yellow);
+        }
+
+        .stat-icon {
+            font-size: 3.5rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, var(--institutional-red), var(--institutional-yellow));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--institutional-red), var(--institutional-dark-red));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .stat-label {
+            color: var(--institutional-red);
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+            letter-spacing: 1px;
+        }
+
+        .quick-action-btn {
+            background: rgba(255, 255, 255, 0.98);
+            border: 2px solid transparent;
+            border-radius: 20px;
+            padding: 1.5rem;
+            text-decoration: none;
+            color: var(--institutional-red);
+            transition: all 0.3s ease;
+            display: block;
+            text-align: center;
+            box-shadow: 0 10px 20px var(--shadow-color);
+        }
+
+        .quick-action-btn:hover {
+            transform: translateY(-10px);
+            border-color: var(--institutional-yellow);
+            color: var(--institutional-red);
+        }
+
+        .quick-action-btn i {
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, var(--institutional-red), var(--institutional-yellow));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 0.5rem;
+        }
+
+        .alert-item {
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            border-left: 5px solid;
+            transition: all 0.3s ease;
+        }
+
+        .alert-item:hover {
+            transform: translateX(5px);
+        }
+
+        .alert-warning { border-left-color: var(--warning-color); }
+        .alert-danger { border-left-color: var(--danger-color); }
+        .alert-info { border-left-color: var(--info-color); }
+        .alert-success { border-left-color: var(--success-color); }
+
+        .matricula-item {
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 8px 25px var(--shadow-color);
+            transition: all 0.3s ease;
+            border-left: 4px solid;
+        }
+
+        .matricula-item:hover {
+            transform: translateY(-3px);
+        }
+
+        .matricula-pendiente { border-left-color: var(--warning-color); }
+        .matricula-aprobada { border-left-color: var(--success-color); }
+        .matricula-rechazada { border-left-color: var(--danger-color); }
+
+        .status-badge {
+            padding: 0.5rem 1rem;
+            border-radius: 25px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .badge-pendiente {
+            background: linear-gradient(135deg, var(--institutional-light-yellow), var(--institutional-yellow));
+            color: var(--institutional-red);
+        }
+
+        .badge-aprobada {
+            background: linear-gradient(135deg, #d4edda, #c3e6cb);
+            color: #155724;
+        }
+
+        .badge-rechazada {
+            background: linear-gradient(135deg, #f8d7da, #f5c6cb);
+            color: var(--institutional-red);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--institutional-red), var(--institutional-dark-red));
+            border: none;
+            border-radius: 15px;
+            padding: 0.75rem 2rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+        }
+
+        .btn-success, .btn-warning, .btn-danger {
+            border: none;
+            border-radius: 15px;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, var(--success-color), #20c997);
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, var(--institutional-yellow), var(--institutional-gold));
+            color: var(--institutional-red);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, var(--danger-color), var(--institutional-dark-red));
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 3rem;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+        }
+
+        .loading .spinner-border {
+            width: 3rem;
+            height: 3rem;
+            color: var(--institutional-red);
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .animate-pulse {
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @media (max-width: 768px) {
+            .main-container { padding: 0 0.5rem; }
+            .card-header { padding: 1.5rem; }
+            .stat-card { padding: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+<!-- NAVBAR -->
+<nav class="navbar navbar-expand-lg navbar-light fixed-top">
+    <div class="container-fluid">
+        <a class="navbar-brand d-flex align-items-center" href="admin-dashboard.html">
+            <i class="fas fa-graduation-cap me-2"></i>
+            <span>César Vallejo</span>
+            <span class="admin-badge">ADMINISTRADOR</span>
+        </a>
+        <div class="navbar-nav ms-auto d-flex flex-row align-items-center">
+            <div class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #c0392b, #f1c40f); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 10px;">
+                        <i class="fas fa-user-shield text-white"></i>
+                    </div>
+                    <span id="nombreUsuario" style="color: #c0392b; font-weight: 600;">Cargando...</span>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li><a class="dropdown-item" href="admin-dashboard.html"><i class="fas fa-home me-2"></i>Dashboard</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item text-danger" href="#" onclick="cerrarSesion()"><i class="fas fa-sign-out-alt me-2"></i>Cerrar Sesión</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<!-- CONTENIDO -->
+<div class="container-fluid main-container">
+    <!-- Estadísticas -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card animate__animated animate__fadeInDown">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <h4 class="mb-0"><i class="fas fa-user-graduate me-2"></i>Gestión de Estudiantes</h4>
+                        <p class="mb-0">Administra los estudiantes registrados en el sistema</p>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row" id="statsContainer">
+                        <div class="col-md-3 col-sm-6 col-6 mb-3">
+                            <div class="stat-card">
+                                <div class="stat-icon"><i class="fas fa-users"></i></div>
+                                <div class="stat-number" id="totalEstudiantes">0</div>
+                                <div class="stat-label">Total Estudiantes</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-sm-6 col-6 mb-3">
+                            <div class="stat-card">
+                                <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
+                                <div class="stat-number" id="estudiantesActivos">0</div>
+                                <div class="stat-label">Estudiantes Activos</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros / acciones -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card animate__animated animate__fadeInUp">
+                <div class="card-body d-flex justify-content-between align-items-center flex-wrap">
+                    <div class="d-flex gap-3 flex-wrap align-items-center">
+                        <input type="text" id="inputBusqueda" class="form-control" placeholder="Buscar por nombre, documento..." style="min-width: 300px;">
+                        <select id="filtroEstado" class="form-select" style="width:160px;">
+                            <option value="">Todos los estados</option>
+                            <option value="ACTIVO">Activos</option>
+                            <option value="INACTIVO">Inactivos</option>
+                        </select>
+                        <button class="btn btn-primary" onclick="buscarEstudiantes()"><i class="fas fa-search me-2"></i>Buscar</button>
+                    </div>
+                    <button class="btn btn-primary" onclick="abrirModalNuevo()"><i class="fas fa-plus me-2"></i>Nuevo Estudiante</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card animate__animated animate__fadeInUp">
+                <div class="card-header">
+                    <h4 class="mb-0"><i class="fas fa-table me-2"></i>Lista de Estudiantes</h4>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nombre Completo</th>
+                                <th>Documento</th>
+                                <th>Grado</th>
+                                <th>Sección</th>
+                                <th>Apoderado</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                            </thead>
+                            <tbody id="tablaEstudiantes">
+                            <tr><td colspan="8" class="text-center">Cargando estudiantes...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Crear / Editar -->
+<div class="modal fade" id="modalEstudiante" tabindex="-1" aria-labelledby="modalEstudianteLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalEstudianteLabel"><i class="fas fa-user-plus me-2"></i>Nuevo Estudiante</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formEstudiante" onsubmit="guardarEstudiante(event)">
+                    <input type="hidden" id="estudianteId">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="nombres" class="form-label">Nombres *</label>
+                            <input type="text" id="nombres" class="form-control" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="apellidos" class="form-label">Apellidos *</label>
+                            <input type="text" id="apellidos" class="form-control" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="tipoDocumento" class="form-label">Tipo de Documento *</label>
+                            <select id="tipoDocumento" class="form-select" required>
+                                <option value="">Seleccionar...</option>
+                                <option value="DNI">DNI</option>
+                                <option value="PASAPORTE">Pasaporte</option>
+                                <option value="CE">Carné de Extranjería</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="numeroDocumento" class="form-label">Número de Documento *</label>
+                            <input type="text" id="numeroDocumento" class="form-control" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="fechaNacimiento" class="form-label">Fecha de Nacimiento *</label>
+                            <input type="date" id="fechaNacimiento" class="form-control" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="genero" class="form-label">Género *</label>
+                            <select id="genero" class="form-select" required>
+                                <option value="">Seleccionar...</option>
+                                <option value="MASCULINO">Masculino</option>
+                                <option value="FEMENINO">Femenino</option>
+                                <option value="OTRO">Otro</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="direccion" class="form-label">Dirección</label>
+                            <input type="text" id="direccion" class="form-control">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="telefono" class="form-label">Teléfono</label>
+                            <input type="text" id="telefono" class="form-control">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="email" class="form-label">Email</label>
+                            <input type="email" id="email" class="form-control">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="apoderadoId" class="form-label">Apoderado *</label>
+                            <select id="apoderadoId" class="form-select" required>
+                                <option value="">Cargando apoderados...</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3" id="gradoActualContainer" style="display: none;">
+                            <label for="gradoActual" class="form-label">Grado Actual</label>
+                            <input type="text" id="gradoActual" class="form-control">
+                        </div>
+                        <div class="col-md-4 mb-3" id="seccionActualContainer" style="display: none;">
+                            <label for="seccionActual" class="form-label">Sección Actual</label>
+                            <input type="text" id="seccionActual" class="form-control">
+                        </div>
+                        <div class="col-md-4 mb-3" id="añoAcademicoContainer" style="display: none;">
+                            <label for="añoAcademico" class="form-label">Año Académico</label>
+                            <input type="text" id="añoAcademico" class="form-control">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="nombreContactoEmergencia" class="form-label">Contacto de Emergencia</label>
+                            <input type="text" id="nombreContactoEmergencia" class="form-control">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="telefonoEmergencia" class="form-label">Teléfono de Emergencia</label>
+                            <input type="text" id="telefonoEmergencia" class="form-control">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="alergias" class="form-label">Alergias</label>
+                            <textarea id="alergias" class="form-control" placeholder="Especificar alergias..."></textarea>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="condicionesMedicas" class="form-label">Condiciones Médicas</label>
+                            <textarea id="condicionesMedicas" class="form-control" placeholder="Especificar condiciones médicas..."></textarea>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="tipoSangre" class="form-label">Tipo de Sangre</label>
+                            <select id="tipoSangre" class="form-select">
+                                <option value="">Seleccionar...</option>
+                                <option value="A+">A+</option>
+                                <option value="A-">A-</option>
+                                <option value="B+">B+</option>
+                                <option value="B-">B-</option>
+                                <option value="AB+">AB+</option>
+                                <option value="AB-">AB-</option>
+                                <option value="O+">O+</option>
+                                <option value="O-">O-</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-end gap-2 mt-3">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary"><i class="fas fa-save me-2"></i>Guardar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Detalles -->
+<div class="modal fade" id="modalDetalles" tabindex="-1" aria-labelledby="modalDetallesLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalDetallesLabel"><i class="fas fa-info-circle me-2"></i>Detalles del Estudiante</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body" id="detallesEstudiante"></div>
+            <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button></div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Cambiar Estado -->
+<div class="modal fade" id="modalCambiarEstado" tabindex="-1" aria-labelledby="modalCambiarEstadoLabel" aria-hidden="true">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalCambiarEstadoLabel"><i class="fas fa-toggle-on me-2"></i>Cambiar Estado</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <p><strong id="estudianteCambiarNombre"></strong></p>
+                <div class="mb-3">
+                    <label for="nuevoEstado" class="form-label">Nuevo Estado *</label>
+                    <select id="nuevoEstado" class="form-select" required>
+                        <option value="">Seleccionar...</option>
+                        <option value="ACTIVO">Activo</option>
+                        <option value="INACTIVO">Inactivo</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="motivoEstado" class="form-label">Motivo del Cambio</label>
+                    <textarea id="motivoEstado" class="form-control" placeholder="Especifique el motivo..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button class="btn btn-primary" onclick="confirmarCambiarEstado()"><i class="fas fa-save me-2"></i>Guardar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast -->
+<div class="toast-container position-fixed top-0 end-0 p-3" style="z-index:1060">
+    <div id="notificationToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header">
+            <i class="fas fa-bell me-2" style="color:#c0392b;"></i>
+            <strong class="me-auto" style="color:#c0392b;">César Vallejo Admin</strong>
+            <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Cerrar"></button>
+        </div>
+        <div class="toast-body" id="toastMessage"></div>
+    </div>
+</div>
+
+<!-- SCRIPTS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+<script>
+    const API_URL = 'http://localhost:8080/api/estudiantes';
+const API_USUARIOS = 'http://localhost:8080/api/usuarios';
+let token = '';
+let usuarioActual = null;
+let estudiantesData = [];
+let apoderados = [];
+let estudianteIdCambiarEstado = null;
+let modalEstudianteInstance = null;
+let modalDetallesInstance = null;
+let modalCambiarEstadoInstance = null;
+
+document.addEventListener('DOMContentLoaded', () => {
+    modalEstudianteInstance = new bootstrap.Modal(document.getElementById('modalEstudiante'));
+    modalDetallesInstance = new bootstrap.Modal(document.getElementById('modalDetalles'));
+    modalCambiarEstadoInstance = new bootstrap.Modal(document.getElementById('modalCambiarEstado'));
+
+    token = localStorage.getItem('token') || '';
+    if (!token) {
+        mostrarError('No se encontró el token de autenticación');
+        window.location.href = 'login.html';
+        return;
+    }
+
+    validarSesion().finally(() => {
+        cargarApoderados();
+        cargarEstudiantes();
+    });
+
+    const inputBusqueda = document.getElementById('inputBusqueda');
+    if (inputBusqueda) {
+        inputBusqueda.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') buscarEstudiantes();
+        });
+    }
+
+    const filtroEstado = document.getElementById('filtroEstado');
+    if (filtroEstado) filtroEstado.addEventListener('change', aplicarFiltrosCliente);
+});
+
+async function validarSesion() {
+    try {
+        const res = await fetch('http://localhost:8080/api/auth/validate', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!res.ok) {
+            console.warn('Validación de sesión no OK, status:', res.status);
+            mostrarError('Sesión inválida. Por favor, inicia sesión nuevamente.');
+            window.location.href = 'login.html';
+            return;
+        }
+        const data = await res.json();
+        if (data?.valido) {
+            usuarioActual = data.usuario;
+            const nombreUsuarioEl = document.getElementById('nombreUsuario');
+            if (nombreUsuarioEl) nombreUsuarioEl.textContent = usuarioActual.nombre || 'ADMIN';
+            if (usuarioActual.rol !== 'ADMIN') {
+                mostrarError('No tienes permisos para acceder a esta página');
+                window.location.href = 'login.html';
+            }
+        }
+    } catch (err) {
+        console.error('Error validando sesión:', err);
+        mostrarError('Error al validar la sesión');
+        window.location.href = 'login.html';
+    }
+}
+
+async function cargarApoderados() {
+    try {
+        const res = await fetch(`${API_USUARIOS}?rol=PADRE`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!res.ok) {
+            throw new Error(`Error al cargar apoderados, status ${res.status}`);
+        }
+        const data = await res.json();
+        apoderados = Array.isArray(data) ? data.filter(u => u.rol === 'PADRE') : (data.content || []).filter(u => u.rol === 'PADRE');
+        const select = document.getElementById('apoderadoId');
+        select.innerHTML = '<option value="">Seleccionar apoderado...</option>';
+        if (apoderados.length === 0) {
+            select.innerHTML += '<option value="">No hay apoderados disponibles</option>';
+        } else {
+            apoderados.forEach(a => {
+                const option = document.createElement('option');
+                option.value = a.id;
+                option.textContent = a.nombre;
+                select.appendChild(option);
+            });
+        }
+    } catch (err) {
+        console.error('Error al cargar apoderados:', err);
+        document.getElementById('apoderadoId').innerHTML = '<option value="">Error al cargar apoderados</option>';
+        mostrarError('Error al cargar apoderados: ' + err.message);
+    }
+}
+
+async function cargarEstudiantes() {
+    try {
+        const response = await fetch(`${API_URL}?busqueda=&page=0&size=1000`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!response.ok) {
+            throw new Error(`Error al cargar estudiantes, status ${response.status}`);
+        }
+        const data = await response.json();
+        estudiantesData = Array.isArray(data) ? data : data.content || [];
+        renderizarTabla(estudiantesData);
+        actualizarEstadisticas();
+    } catch (err) {
+        console.error('Error al cargar estudiantes:', err);
+        estudiantesData = [];
+        renderizarTabla(estudiantesData);
+        actualizarEstadisticas();
+        mostrarError('Error al cargar los estudiantes: ' + err.message);
+    }
+}
+
+function actualizarEstadisticas() {
+    const total = estudiantesData.length;
+    const activos = estudiantesData.filter(e => e.estadoEstudiante === 'ACTIVO').length;
+    const elTotal = document.getElementById('totalEstudiantes');
+    const elActivos = document.getElementById('estudiantesActivos');
+    if (elTotal) elTotal.textContent = total;
+    if (elActivos) elActivos.textContent = activos;
+}
+
+function renderizarTabla(estudiantes) {
+    const tbody = document.getElementById('tablaEstudiantes');
+    if (!tbody) return;
+    if (!estudiantes || estudiantes.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" class="text-center">No se encontraron estudiantes</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = estudiantes.map(estudiante => {
+        const nombreFull = ((estudiante.nombres || '') + ' ' + (estudiante.apellidos || '')).replace(/'/g, "\\'");
+        return `
+            <tr>
+                <td>${estudiante.id ?? '-'}</td>
+                <td>${estudiante.nombreCompleto ?? '-'}</td>
+                <td>${estudiante.numeroDocumento ?? '-'}</td>
+                <td>${estudiante.gradoActual ?? '-'}</td>
+                <td>${estudiante.seccionActual ?? '-'}</td>
+                <td>${estudiante.nombreApoderado ?? '-'}</td>
+                <td><span class="badge ${estudiante.estadoEstudiante === 'ACTIVO' ? 'bg-success' : 'bg-danger'}">${estudiante.estadoEstudiante ?? '-'}</span></td>
+                <td>
+                    <button class="btn btn-sm btn-outline-primary" onclick="verDetalles(${estudiante.id})" title="Ver"><i class="fas fa-eye"></i></button>
+                    <button class="btn btn-sm btn-outline-warning" onclick="editarEstudiante(${estudiante.id})" title="Editar"><i class="fas fa-edit"></i></button>
+                    <button class="btn btn-sm btn-outline-danger" onclick="abrirModalCambiarEstado(${estudiante.id}, '${nombreFull}')" title="Cambiar Estado"><i class="fas fa-toggle-on"></i></button>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function buscarEstudiantes() {
+    const termino = (document.getElementById('inputBusqueda')?.value || '').trim().toLowerCase();
+    const estado = (document.getElementById('filtroEstado')?.value ?? '');
+    let resultado = estudiantesData.slice();
+
+    if (termino) {
+        resultado = resultado.filter(e =>
+            (e.nombreCompleto || '').toLowerCase().includes(termino) ||
+            (e.numeroDocumento || '').toLowerCase().includes(termino)
+        );
+    }
+
+    if (estado) resultado = resultado.filter(e => e.estadoEstudiante === estado);
+
+    renderizarTabla(resultado);
+}
+
+function aplicarFiltrosCliente() {
+    buscarEstudiantes();
+}
+
+function abrirModalNuevo() {
+    document.getElementById('modalEstudianteLabel').innerHTML = '<i class="fas fa-user-plus me-2"></i>Nuevo Estudiante';
+    const form = document.getElementById('formEstudiante');
+    if (form) form.reset();
+    document.getElementById('estudianteId').value = '';
+
+
+    document.getElementById('gradoActualContainer').style.display = 'none';
+    document.getElementById('seccionActualContainer').style.display = 'none';
+    document.getElementById('añoAcademicoContainer').style.display = 'none';
+
+
+    document.getElementById('gradoActual').readOnly = false;
+    document.getElementById('seccionActual').readOnly = false;
+    document.getElementById('añoAcademico').readOnly = false;
+
+    document.getElementById('gradoActual').style.backgroundColor = '';
+    document.getElementById('seccionActual').style.backgroundColor = '';
+    document.getElementById('añoAcademico').style.backgroundColor = '';
+
+    modalEstudianteInstance.show();
+}
+
+async function editarEstudiante(id) {
+    try {
+        const res = await fetch(`${API_URL}/${id}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (!res.ok) {
+            const errorData = await res.json();
+            throw new Error(errorData.mensaje || `Error al cargar estudiante, status ${res.status}`);
+        }
+
+        const estudiante = await res.json();
+
+        document.getElementById('modalEstudianteLabel').textContent = 'Editar Estudiante';
+        document.getElementById('estudianteId').value = estudiante.id ?? '';
+        document.getElementById('nombres').value = estudiante.nombres ?? '';
+        document.getElementById('apellidos').value = estudiante.apellidos ?? '';
+        document.getElementById('tipoDocumento').value = estudiante.tipoDocumento ?? '';
+        document.getElementById('numeroDocumento').value = estudiante.numeroDocumento ?? '';
+        document.getElementById('fechaNacimiento').value = estudiante.fechaNacimiento ?? '';
+        document.getElementById('genero').value = estudiante.genero ?? '';
+        document.getElementById('direccion').value = estudiante.direccion ?? '';
+        document.getElementById('telefono').value = estudiante.telefono ?? '';
+        document.getElementById('email').value = estudiante.email ?? '';
+
+        const apoderado = apoderados.find(a => a.nombre === estudiante.nombreApoderado);
+        if (apoderado) {
+            document.getElementById('apoderadoId').value = apoderado.id;
+        } else {
+            console.warn('No se encontró el apoderado en la lista:', estudiante.nombreApoderado);
+            if (estudiante.apoderadoId) {
+                document.getElementById('apoderadoId').value = estudiante.apoderadoId;
+            }
+        }
+
+        document.getElementById('gradoActual').value = estudiante.gradoActual ?? '';
+        document.getElementById('seccionActual').value = estudiante.seccionActual ?? '';
+        document.getElementById('añoAcademico').value = estudiante.añoAcademico ?? '';
+
+        document.getElementById('gradoActual').readOnly = true;
+        document.getElementById('seccionActual').readOnly = true;
+        document.getElementById('añoAcademico').readOnly = true;
+
+        document.getElementById('gradoActual').style.backgroundColor = '#e9ecef';
+        document.getElementById('seccionActual').style.backgroundColor = '#e9ecef';
+        document.getElementById('añoAcademico').style.backgroundColor = '#e9ecef';
+
+        document.getElementById('nombreContactoEmergencia').value = estudiante.nombreContactoEmergencia ?? '';
+        document.getElementById('telefonoEmergencia').value = estudiante.telefonoEmergencia ?? '';
+        document.getElementById('alergias').value = estudiante.alergias ?? '';
+        document.getElementById('condicionesMedicas').value = estudiante.condicionesMedicas ?? '';
+        document.getElementById('tipoSangre').value = estudiante.tipoSangre ?? '';
+
+        document.getElementById('gradoActualContainer').style.display = 'block';
+        document.getElementById('seccionActualContainer').style.display = 'block';
+        document.getElementById('añoAcademicoContainer').style.display = 'block';
+
+        modalEstudianteInstance.show();
+    } catch (err) {
+        console.error('Error al cargar estudiante:', err);
+        mostrarError('Error al cargar el estudiante: ' + err.message);
+    }
+}
+
+async function guardarEstudiante(event) {
+    event.preventDefault();
+    const id = document.getElementById('estudianteId').value;
+
+    const datosBase = {
+        nombres: document.getElementById('nombres').value.trim(),
+        apellidos: document.getElementById('apellidos').value.trim(),
+        tipoDocumento: document.getElementById('tipoDocumento').value,
+        numeroDocumento: document.getElementById('numeroDocumento').value.trim(),
+        fechaNacimiento: document.getElementById('fechaNacimiento').value,
+        genero: document.getElementById('genero').value,
+        direccion: document.getElementById('direccion').value.trim() || null,
+        telefono: document.getElementById('telefono').value.trim() || null,
+        email: document.getElementById('email').value.trim() || null,
+        apoderadoId: Number(document.getElementById('apoderadoId').value),
+        nombreContactoEmergencia: document.getElementById('nombreContactoEmergencia').value.trim() || null,
+        telefonoEmergencia: document.getElementById('telefonoEmergencia').value.trim() || null,
+        alergias: document.getElementById('alergias').value.trim() || null,
+        condicionesMedicas: document.getElementById('condicionesMedicas').value.trim() || null,
+        tipoSangre: document.getElementById('tipoSangre').value || null
+    };
+
+    if (!datosBase.nombres || !datosBase.apellidos || !datosBase.tipoDocumento ||
+        !datosBase.numeroDocumento || !datosBase.fechaNacimiento ||
+        !datosBase.genero || !datosBase.apoderadoId) {
+        mostrarError('Por favor, completa todos los campos obligatorios');
+        return;
+    }
+
+    if (!['DNI', 'PASAPORTE', 'CE'].includes(datosBase.tipoDocumento)) {
+        mostrarError('Tipo de documento no válido');
+        return;
+    }
+
+    if (!['MASCULINO', 'FEMENINO', 'OTRO'].includes(datosBase.genero)) {
+        mostrarError('Género no válido');
+        return;
+    }
+
+    let datos;
+
+    if (id) {
+        datos = {
+            ...datosBase,
+            gradoActual: document.getElementById('gradoActual').value.trim() || null,
+            seccionActual: document.getElementById('seccionActual').value.trim() || null,
+            añoAcademico: document.getElementById('añoAcademico').value.trim() || null
+        };
+    } else {
+
+        datos = {
+            ...datosBase,
+            createdBy: usuarioActual ? usuarioActual.nombre : null
+        };
+    }
+
+    try {
+        const url = id ? `${API_URL}/${id}` : API_URL;
+        const method = id ? 'PUT' : 'POST';
+
+        console.log('Enviando solicitud a:', url, 'con método:', method);
+        console.log('Datos:', JSON.stringify(datos, null, 2));
+
+        const res = await fetch(url, {
+            method,
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(datos)
+        });
+
+        if (!res.ok) {
+            let errorMessage = 'Error al guardar estudiante';
+            try {
+                const errorData = await res.json();
+                console.error('Respuesta de error:', errorData);
+
+
+                if (typeof errorData === 'object' && !errorData.mensaje && !errorData.message && !errorData.status) {
+                    errorMessage = Object.entries(errorData)
+                        .map(([campo, msg]) => `${campo}: ${msg}`)
+                        .join(', ');
+                } else {
+                    errorMessage = errorData.mensaje || errorData.message || `Error ${res.status}`;
+                }
+            } catch (jsonError) {
+                console.error('No se pudo parsear JSON:', jsonError);
+                const textError = await res.text();
+                errorMessage = textError || res.statusText || `Error ${res.status}`;
+            }
+            throw new Error(errorMessage);
+        }
+
+        const responseData = await res.json();
+        console.log('Respuesta exitosa:', responseData);
+
+        modalEstudianteInstance.hide();
+        mostrarExito(id ? 'Estudiante actualizado correctamente' : 'Estudiante creado correctamente');
+        await cargarEstudiantes();
+
+    } catch (err) {
+        console.error('Error en guardarEstudiante:', err);
+        mostrarError(`Error al guardar el estudiante: ${err.message}`);
+    }
+}
+
+async function verDetalles(id) {
+    try {
+        const res = await fetch(`${API_URL}/${id}`, { headers: { 'Authorization': `Bearer ${token}` } });
+        if (!res.ok) {
+            const errorData = await res.json();
+            throw new Error(errorData.mensaje || `Error al cargar detalles, status ${res.status}`);
+        }
+        const estudiante = await res.json();
+        const html = `
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>ID:</strong> ${estudiante.id ?? '-'}</p>
+                    <p><strong>Nombres:</strong> ${estudiante.nombres ?? '-'}</p>
+                    <p><strong>Apellidos:</strong> ${estudiante.apellidos ?? '-'}</p>
+                    <p><strong>Nombre Completo:</strong> ${estudiante.nombreCompleto ?? '-'}</p>
+                    <p><strong>Tipo Documento:</strong> ${estudiante.tipoDocumento ?? '-'}</p>
+                    <p><strong>Número Documento:</strong> ${estudiante.numeroDocumento ?? '-'}</p>
+                    <p><strong>Fecha Nacimiento:</strong> ${estudiante.fechaNacimiento ?? '-'}</p>
+                    <p><strong>Edad:</strong> ${estudiante.edad ?? '-'}</p>
+                    <p><strong>Género:</strong> ${estudiante.genero ?? '-'}</p>
+                    <p><strong>Dirección:</strong> ${estudiante.direccion ?? '-'}</p>
+                    <p><strong>Teléfono:</strong> ${estudiante.telefono ?? '-'}</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Email:</strong> ${estudiante.email ?? '-'}</p>
+                    <p><strong>Grado Actual:</strong> ${estudiante.gradoActual ?? '-'}</p>
+                    <p><strong>Sección Actual:</strong> ${estudiante.seccionActual ?? '-'}</p>
+                    <p><strong>Año Académico:</strong> ${estudiante.añoAcademico ?? '-'}</p>
+                    <p><strong>Estado:</strong> <span class="badge ${estudiante.estadoEstudiante === 'ACTIVO' ? 'bg-success' : 'bg-danger'}">${estudiante.estadoEstudiante ?? '-'}</span></p>
+                    <p><strong>Apoderado:</strong> ${estudiante.nombreApoderado ?? '-'}</p>
+                    <p><strong>Email Apoderado:</strong> ${estudiante.emailApoderado ?? '-'}</p>
+                    <p><strong>Contacto Emergencia:</strong> ${estudiante.nombreContactoEmergencia ?? '-'}</p>
+                    <p><strong>Teléfono Emergencia:</strong> ${estudiante.telefonoEmergencia ?? '-'}</p>
+                    <p><strong>Alergias:</strong> ${estudiante.alergias ?? '-'}</p>
+                    <p><strong>Condiciones Médicas:</strong> ${estudiante.condicionesMedicas ?? '-'}</p>
+                    <p><strong>Tipo de Sangre:</strong> ${estudiante.tipoSangre ?? '-'}</p>
+                    <p><strong>Creado En:</strong> ${estudiante.createdAt ?? '-'}</p>
+                </div>
+            </div>`;
+        document.getElementById('detallesEstudiante').innerHTML = html;
+        modalDetallesInstance.show();
+    } catch (err) {
+        console.error('Error al cargar detalles:', err);
+        mostrarError('Error al cargar los detalles: ' + err.message);
+    }
+}
+
+function abrirModalCambiarEstado(id, nombre) {
+    estudianteIdCambiarEstado = id;
+    document.getElementById('estudianteCambiarNombre').textContent = nombre || '';
+    document.getElementById('nuevoEstado').value = '';
+    document.getElementById('motivoEstado').value = '';
+    modalCambiarEstadoInstance.show();
+}
+
+async function confirmarCambiarEstado() {
+    if (!estudianteIdCambiarEstado) {
+        mostrarError('No se seleccionó un estudiante');
+        return;
+    }
+    const nuevoEstado = document.getElementById('nuevoEstado').value;
+    const motivo = document.getElementById('motivoEstado').value.trim() || null;
+
+    if (!['ACTIVO', 'INACTIVO'].includes(nuevoEstado)) {
+        mostrarError('Por favor, seleccione un estado válido');
+        return;
+    }
+
+    try {
+        const queryParams = new URLSearchParams();
+        queryParams.append('estado', nuevoEstado);
+        if (motivo) queryParams.append('motivo', motivo);
+
+        console.log('Enviando solicitud PATCH a:', `${API_URL}/${estudianteIdCambiarEstado}/estado?${queryParams.toString()}`);
+
+        const res = await fetch(`${API_URL}/${estudianteIdCambiarEstado}/estado?${queryParams.toString()}`, {
+            method: 'PATCH',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        if (!res.ok) {
+            let errorData;
+            try {
+                errorData = await res.json();
+                console.error('Respuesta de error:', errorData);
+                throw new Error(errorData.mensaje || errorData.message || 'Error al cambiar estado');
+            } catch (e) {
+                const text = await res.text();
+                console.error('Texto de error:', text);
+                throw new Error(text || 'Error al cambiar estado');
+            }
+        }
+
+        modalCambiarEstadoInstance.hide();
+        mostrarExito('Estado del estudiante cambiado correctamente');
+        await cargarEstudiantes();
+    } catch (err) {
+        console.error('Error cambiarEstado:', err);
+        mostrarError('Error al cambiar el estado del estudiante: ' + err.message);
+    }
+}
+
+async function cerrarSesion() {
+    try {
+        await fetch('http://localhost:8080/api/auth/logout', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+    } catch (err) {
+        console.warn('Error cerrar sesión:', err);
+    }
+    localStorage.removeItem('token');
+    window.location.href = 'login.html';
+}
+
+function mostrarExito(mensaje) {
+    const toastEl = document.getElementById('notificationToast');
+    document.getElementById('toastMessage').textContent = mensaje;
+    toastEl.classList.remove('bg-danger');
+    new bootstrap.Toast(toastEl).show();
+}
+
+function mostrarError(mensaje) {
+    const toastEl = document.getElementById('notificationToast');
+    document.getElementById('toastMessage').textContent = mensaje;
+    toastEl.classList.add('bg-danger');
+    new bootstrap.Toast(toastEl).show();
+}
+</script>
+</body>
+</html>

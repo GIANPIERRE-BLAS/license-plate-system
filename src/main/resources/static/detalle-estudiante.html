@@ -1,0 +1,961 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detalles del Estudiante - Colegio César Vallejo</title>
+    <!-- Librerías externas -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Institutional Colors */
+            --institutional-yellow: #FFD700;
+            --institutional-red: #DC143C;
+            --institutional-white: #FFFFFF;
+            --institutional-dark-red: #B71C1C;
+            --institutional-light-yellow: #FFF9C4;
+            --institutional-gold: #DAA520;
+            /* Status Colors */
+            --success-color: #28a745;
+            --warning-color: #ffc107;
+            --danger-color: var(--institutional-red);
+            --info-color: #17a2b8;
+            --light-color: #f8f9fa;
+            --dark-color: #343a40;
+            --shadow-color: rgba(220, 20, 60, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        /* 🎨 Estilos para Formularios Institucionales César Vallejo */
+
+.form-control, .form-select {
+    border: 2px solid #e9ecef;
+    border-radius: 15px;
+    padding: 1rem;
+    transition: all 0.3s ease;
+    font-weight: 500;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: var(--institutional-yellow);
+    box-shadow: 0 0 0 0.25rem rgba(255, 215, 0, 0.25);
+}
+
+.form-label {
+    font-weight: 600;
+    color: var(--institutional-red);
+    margin-bottom: 0.8rem;
+}
+
+/* 🧾 Modales (para formularios emergentes) */
+.modal-content {
+    border-radius: 20px;
+    border: 3px solid var(--institutional-yellow);
+    box-shadow: 0 25px 50px rgba(220, 20, 60, 0.2);
+}
+
+.modal-header {
+    background: linear-gradient(135deg, var(--institutional-red), var(--institutional-dark-red));
+    border-radius: 17px 17px 0 0;
+    border-bottom: 3px solid var(--institutional-yellow);
+}
+
+/* ✅ Botones del formulario */
+.btn-primary {
+    background: linear-gradient(135deg, var(--institutional-red), var(--institutional-dark-red));
+    border: none;
+    border-radius: 15px;
+    padding: 0.75rem 2rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 8px 25px rgba(220, 20, 60, 0.3);
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-primary::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, var(--institutional-yellow), transparent);
+    opacity: 0.3;
+    transition: left 0.6s ease;
+}
+
+.btn-primary:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 15px 35px rgba(220, 20, 60, 0.4);
+}
+
+.btn-primary:hover::before {
+    left: 100%;
+}
+
+.btn-success {
+    background: linear-gradient(135deg, var(--pago-pagado), #20c997);
+    border: none;
+    border-radius: 15px;
+    font-weight: 600;
+}
+
+.btn-warning {
+    background: linear-gradient(135deg, var(--institutional-yellow), var(--institutional-gold));
+    border: none;
+    border-radius: 15px;
+    color: var(--institutional-red);
+    font-weight: 600;
+}
+
+.btn-danger {
+    background: linear-gradient(135deg, var(--pago-vencido), var(--institutional-dark-red));
+    border: none;
+    border-radius: 15px;
+    font-weight: 600;
+}
+
+/* ⚠️ Alertas de validación del formulario */
+.alert {
+    border-radius: 15px;
+    border: none;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.alert-warning {
+    background: linear-gradient(135deg, var(--institutional-light-yellow), rgba(255, 215, 0, 0.1));
+    color: var(--institutional-red);
+    border-left: 5px solid var(--institutional-yellow);
+}
+
+.alert-success {
+    background: linear-gradient(135deg, #d4edda, rgba(40, 167, 69, 0.1));
+    color: #155724;
+    border-left: 5px solid var(--pago-pagado);
+}
+
+.alert-danger {
+    background: linear-gradient(135deg, #f8d7da, rgba(220, 20, 60, 0.1));
+    color: var(--institutional-red);
+    border-left: 5px solid var(--pago-vencido);
+}
+
+
+        body {
+            background: linear-gradient(135deg, var(--institutional-red) 0%, var(--institutional-dark-red) 50%, var(--institutional-yellow) 100%);
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(220, 20, 60, 0.95) 0%, rgba(183, 28, 28, 0.95) 50%, rgba(255, 215, 0, 0.95) 100%);
+            z-index: -1;
+        }
+
+        .navbar {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(20px);
+            box-shadow: 0 8px 32px var(--shadow-color);
+            border-bottom: 3px solid var(--institutional-yellow);
+        }
+
+        .navbar-brand {
+            font-weight: 800;
+            font-size: 1.5rem;
+            color: var(--institutional-red) !important;
+        }
+
+        .navbar-brand i {
+            color: var(--institutional-yellow);
+            text-shadow: 2px 2px 4px var(--shadow-color);
+        }
+
+        .admin-badge {
+            background: linear-gradient(135deg, var(--institutional-yellow), var(--institutional-gold));
+            color: var(--institutional-red);
+            padding: 0.25rem 0.75rem;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            margin-left: 10px;
+            box-shadow: 0 2px 10px rgba(255, 215, 0, 0.3);
+        }
+
+        .main-container {
+            margin-top: 5rem;
+            padding: 0 1rem;
+        }
+
+        .card {
+            border: none;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px var(--shadow-color);
+            background: rgba(255, 255, 255, 0.95);
+            transition: all 0.4s ease;
+            overflow: hidden;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 25px 50px rgba(220, 20, 60, 0.15);
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, var(--institutional-red), var(--institutional-dark-red));
+            color: var(--institutional-white);
+            border-radius: 20px 20px 0 0;
+            padding: 2rem;
+            position: relative;
+        }
+
+        .card-header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 100%;
+            height: 200%;
+            background: var(--institutional-yellow);
+            opacity: 0.1;
+            transform: rotate(45deg);
+        }
+
+        .card-header h4, .card-header h5 {
+            position: relative;
+            z-index: 1;
+            font-weight: 700;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 20px;
+            padding: 2rem;
+            text-align: center;
+            transition: all 0.4s ease;
+            border: 3px solid transparent;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 5px;
+            background: linear-gradient(90deg, var(--institutional-yellow), var(--institutional-red));
+        }
+
+        .stat-card:hover {
+            transform: translateY(-15px) scale(1.02);
+            border-color: var(--institutional-yellow);
+        }
+
+        .stat-icon {
+            font-size: 3.5rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, var(--institutional-red), var(--institutional-yellow));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--institutional-red), var(--institutional-dark-red));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .stat-label {
+            color: var(--institutional-red);
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+            letter-spacing: 1px;
+        }
+
+        .quick-action-btn {
+            background: rgba(255, 255, 255, 0.98);
+            border: 2px solid transparent;
+            border-radius: 20px;
+            padding: 1.5rem;
+            text-decoration: none;
+            color: var(--institutional-red);
+            transition: all 0.3s ease;
+            display: block;
+            text-align: center;
+            box-shadow: 0 10px 20px var(--shadow-color);
+        }
+
+        .quick-action-btn:hover {
+            transform: translateY(-10px);
+            border-color: var(--institutional-yellow);
+            color: var(--institutional-red);
+        }
+
+        .quick-action-btn i {
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, var(--institutional-red), var(--institutional-yellow));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 0.5rem;
+        }
+
+        .alert-item {
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            border-left: 5px solid;
+            transition: all 0.3s ease;
+        }
+
+        .alert-item:hover {
+            transform: translateX(5px);
+        }
+
+        .alert-warning { border-left-color: var(--warning-color); }
+        .alert-danger { border-left-color: var(--danger-color); }
+        .alert-info { border-left-color: var(--info-color); }
+        .alert-success { border-left-color: var(--success-color); }
+
+        .matricula-item {
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 8px 25px var(--shadow-color);
+            transition: all 0.3s ease;
+            border-left: 4px solid;
+        }
+
+        .matricula-item:hover {
+            transform: translateY(-3px);
+        }
+
+        .matricula-pendiente { border-left-color: var(--warning-color); }
+        .matricula-aprobada { border-left-color: var(--success-color); }
+        .matricula-rechazada { border-left-color: var(--danger-color); }
+
+        .status-badge {
+            padding: 0.5rem 1rem;
+            border-radius: 25px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .badge-pendiente {
+            background: linear-gradient(135deg, var(--institutional-light-yellow), var(--institutional-yellow));
+            color: var(--institutional-red);
+        }
+
+        .badge-aprobada {
+            background: linear-gradient(135deg, #d4edda, #c3e6cb);
+            color: #155724;
+        }
+
+        .badge-rechazada {
+            background: linear-gradient(135deg, #f8d7da, #f5c6cb);
+            color: var(--institutional-red);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--institutional-red), var(--institutional-dark-red));
+            border: none;
+            border-radius: 15px;
+            padding: 0.75rem 2rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+        }
+
+        .btn-success, .btn-warning, .btn-danger {
+            border: none;
+            border-radius: 15px;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, var(--success-color), #20c997);
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, var(--institutional-yellow), var(--institutional-gold));
+            color: var(--institutional-red);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, var(--danger-color), var(--institutional-dark-red));
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 3rem;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+        }
+
+        .loading .spinner-border {
+            width: 3rem;
+            height: 3rem;
+            color: var(--institutional-red);
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .animate-pulse {
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @media (max-width: 768px) {
+            .main-container { padding: 0 0.5rem; }
+            .card-header { padding: 1.5rem; }
+            .stat-card { padding: 1.5rem; }
+        }
+    </style>
+
+</head>
+<body>
+
+<!-- NAVBAR (IGUAL AL DE MIS HORARIOS) -->
+<nav class="navbar navbar-expand-lg navbar-light fixed-top py-3">
+    <div class="container-fluid px-4">
+        <a class="navbar-brand d-flex align-items-center" href="padre-dashboard.html">
+            <img src="https://imgur.com/Un4G2Du.png" alt="Logo Colegio César Vallejo"
+                 style="width: 50px; height: 50px; border-radius: 50%; margin-right: 15px; object-fit: cover;">
+            <span style="font-size: 1.2rem; font-weight: 700; color: var(--institutional-red);">
+                I.E 80351 César Vallejo
+            </span>
+        </a>
+        <div class="nav-item">
+            <a class="nav-link dropdown-toggle d-flex align-items-center py-2" href="#" role="button" data-bs-toggle="dropdown">
+                <div style="width: 40px; height: 40px; background: linear-gradient(135deg, var(--institutional-red), var(--institutional-yellow));
+                            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+                            margin-right: 15px; box-shadow: 0 4px 15px rgba(220, 20, 60, 0.3);">
+                    <i class="fas fa-user text-white"></i>
+                </div>
+                <span id="nombreUsuario" style="color: var(--institutional-red); font-weight: 600;">Cargando...</span>
+            </a>
+            <ul class="dropdown-menu dropdown-menu-end mt-2">
+                <li><a class="dropdown-item py-2" href="padre-dashboard.html"><i class="fas fa-home me-2"></i>Dashboard</a></li>
+                <li><a class="dropdown-item text-danger py-2" href="#" onclick="cerrarSesion()">
+                    <i class="fas fa-sign-out-alt me-2"></i>Cerrar Sesión</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<!-- Main Content -->
+<div class="container-fluid main-container">
+    <div id="loading" class="text-center mt-5">
+        <div class="spinner-border" role="status"></div>
+        <p class="mt-3">Cargando detalles del estudiante...</p>
+    </div>
+    <div id="detalleContent" style="display: none;">
+        <!-- Header -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card animate__animated animate__fadeInDown">
+                    <div class="card-header">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h4 class="mb-0"><i class="fas fa-user-graduate me-2"></i>Detalles del Estudiante</h4>
+                                <p class="mb-0">Información completa del estudiante</p>
+                            </div>
+                            <button class="btn btn-primary" onclick="abrirModalEditar()"><i class="fas fa-edit me-2"></i>Editar Estudiante</button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><strong>ID:</strong> <span id="detalleId"></span></p>
+                                <p><strong>Nombres:</strong> <span id="detalleNombres"></span></p>
+                                <p><strong>Apellidos:</strong> <span id="detalleApellidos"></span></p>
+                                <p><strong>Tipo de Documento:</strong> <span id="detalleTipoDocumento"></span></p>
+                                <p><strong>Número de Documento:</strong> <span id="detalleNumeroDocumento"></span></p>
+                                <p><strong>Fecha de Nacimiento:</strong> <span id="detalleFechaNacimiento"></span></p>
+                                <p><strong>Edad:</strong> <span id="detalleEdad"></span></p>
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>Género:</strong> <span id="detalleGenero"></span></p>
+                                <p><strong>Dirección:</strong> <span id="detalleDireccion"></span></p>
+                                <p><strong>Teléfono:</strong> <span id="detalleTelefono"></span></p>
+                                <p><strong>Email:</strong> <span id="detalleEmail"></span></p>
+                                <p><strong>Grado Actual:</strong> <span id="detalleGradoActual"></span></p>
+                                <p><strong>Sección Actual:</strong> <span id="detalleSeccionActual"></span></p>
+                                <p><strong>Año Académico:</strong> <span id="detalleAnioAcademico"></span></p>
+                                <p><strong>Estado:</strong> <span id="detalleEstadoEstudiante" class="badge"></span></p>
+                            </div>
+                            <div class="col-md-12">
+                                <p><strong>Contacto de Emergencia:</strong> <span id="detalleNombreContactoEmergencia"></span></p>
+                                <p><strong>Teléfono de Emergencia:</strong> <span id="detalleTelefonoEmergencia"></span></p>
+                                <p><strong>Alergias:</strong> <span id="detalleAlergias"></span></p>
+                                <p><strong>Condiciones Médicas:</strong> <span id="detalleCondicionesMedicas"></span></p>
+                                <p><strong>Tipo de Sangre:</strong> <span id="detalleTipoSangre"></span></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Editar Estudiante -->
+<div class="modal fade" id="modalEstudiante" tabindex="-1" aria-labelledby="modalEstudianteLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalEstudianteLabel"><i class="fas fa-user-edit me-2"></i>Editar Estudiante</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formEstudiante">
+                    <input type="hidden" id="editarId">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Nombres *</label>
+                            <input type="text" class="form-control" id="editarNombres" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Apellidos *</label>
+                            <input type="text" class="form-control" id="editarApellidos" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Tipo de Documento *</label>
+                            <select class="form-select" id="editarTipoDocumento" required>
+                                <option value="">Seleccionar...</option>
+                                <option value="DNI">DNI</option>
+                                <option value="CARNET_EXTRANJERIA">Carnet de Extranjería</option>
+                                <option value="PASAPORTE">Pasaporte</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Número de Documento *</label>
+                            <input type="text" class="form-control" id="editarNumeroDocumento" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Fecha de Nacimiento *</label>
+                            <input type="date" class="form-control" id="editarFechaNacimiento" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Género *</label>
+                            <select class="form-select" id="editarGenero" required>
+                                <option value="">Seleccionar...</option>
+                                <option value="MASCULINO">Masculino</option>
+                                <option value="FEMENINO">Femenino</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Dirección</label>
+                            <input type="text" class="form-control" id="editarDireccion">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Teléfono</label>
+                            <input type="text" class="form-control" id="editarTelefono">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Email</label>
+                            <input type="email" class="form-control" id="editarEmail">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Grado Actual</label>
+                            <input type="text" class="form-control" id="editarGradoActual" readonly>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Sección Actual</label>
+                            <input type="text" class="form-control" id="editarSeccionActual">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Año Académico</label>
+                            <input type="text" class="form-control" id="editarAnioAcademico" readonly>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Estado</label>
+                            <select class="form-select" id="editarEstadoEstudiante">
+                                <option value="ACTIVO">Activo</option>
+                                <option value="INACTIVO">Inactivo</option>
+                                <option value="RETIRADO">Retirado</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Contacto de Emergencia</label>
+                            <input type="text" class="form-control" id="editarNombreContactoEmergencia">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Teléfono de Emergencia</label>
+                            <input type="text" class="form-control" id="editarTelefonoEmergencia">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Alergias</label>
+                            <textarea class="form-control" id="editarAlergias" rows="2"></textarea>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Condiciones Médicas</label>
+                            <textarea class="form-control" id="editarCondicionesMedicas" rows="2"></textarea>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Tipo de Sangre</label>
+                            <select class="form-select" id="editarTipoSangre">
+                                <option value="">Seleccionar...</option>
+                                <option value="O+">O+</option>
+                                <option value="O-">O-</option>
+                                <option value="A+">A+</option>
+                                <option value="A-">A-</option>
+                                <option value="B+">B+</option>
+                                <option value="B-">B-</option>
+                                <option value="AB+">AB+</option>
+                                <option value="AB-">AB-</option>
+                            </select>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><i class="fas fa-times me-2"></i>Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="guardarCambiosEstudiante()"><i class="fas fa-save me-2"></i>Guardar Cambios</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast Notification -->
+<div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1060;">
+    <div id="notificationToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header">
+            <i class="fas fa-bell me-2"></i>
+            <strong class="me-auto">César Vallejo</strong>
+            <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Cerrar"></button>
+        </div>
+        <div class="toast-body" id="toastMessage"></div>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+<script>
+    const API_BASE = 'http://localhost:8080/api';
+    let token = localStorage.getItem('token');
+    let estudianteId = new URLSearchParams(window.location.search).get('id');
+
+    document.addEventListener('DOMContentLoaded', () => {
+        if (!token) {
+            window.location.href = 'login.html';
+            return;
+        }
+        verificarAutenticacion();
+        cargarDetallesEstudiante();
+    });
+
+    async function verificarAutenticacion() {
+        try {
+            const response = await fetch(`${API_BASE}/auth/validate`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('Sesión inválida');
+            }
+
+            const data = await response.json();
+            if (data.valido) {
+                document.getElementById('nombreUsuario').textContent = data.usuario.nombre;
+                if (data.usuario.rol !== 'PADRE') {
+                    mostrarToast('No tienes permisos para acceder a esta página', 'danger');
+                    setTimeout(() => window.location.href = 'login.html', 2000);
+                }
+            } else {
+                window.location.href = 'login.html';
+            }
+        } catch (error) {
+            console.error('Error validando sesión:', error);
+            window.location.href = 'login.html';
+        }
+    }
+
+    async function cargarDetallesEstudiante() {
+        if (!estudianteId) {
+            mostrarToast('ID de estudiante no proporcionado', 'danger');
+            return;
+        }
+
+        try {
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('detalleContent').style.display = 'none';
+
+            const response = await fetch(`${API_BASE}/estudiantes/${estudianteId}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('Error al cargar detalles del estudiante');
+            }
+
+            const estudiante = await response.json();
+            console.log('Respuesta de la API:', estudiante);
+            console.log('Valor de añoAcademico:', estudiante.añoAcademico);
+            console.log('Claves del objeto estudiante:', Object.keys(estudiante));
+            mostrarDetallesEstudiante(estudiante);
+
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('detalleContent').style.display = 'block';
+        } catch (error) {
+            console.error('Error:', error);
+            mostrarToast('Error al cargar los detalles del estudiante', 'danger');
+        }
+    }
+
+    function mostrarDetallesEstudiante(estudiante) {
+        const datos = {
+            id: estudiante.id || '-',
+            nombres: estudiante.nombres || estudiante.nombre || '-',
+            apellidos: estudiante.apellidos || estudiante.apellido || '-',
+            tipoDocumento: estudiante.tipoDocumento || estudiante.tipo_documento || '-',
+            numeroDocumento: estudiante.numeroDocumento || estudiante.numero_documento || '-',
+            fechaNacimiento: estudiante.fechaNacimiento || estudiante.fecha_nacimiento || '-',
+            genero: estudiante.genero || '-',
+            direccion: estudiante.direccion || '-',
+            telefono: estudiante.telefono || '-',
+            email: estudiante.email || '-',
+            gradoActual: estudiante.gradoActual || estudiante.grado_actual || '-',
+            seccionActual: estudiante.seccionActual || estudiante.seccion_actual || '-',
+            anioAcademico: estudiante.añoAcademico || estudiante.anioAcademico || estudiante.año_academico || estudiante.anio_academico || estudiante.xn_academico || '-',
+            estadoEstudiante: estudiante.estadoEstudiante || estudiante.estado_estudiante || '-',
+            nombreContactoEmergencia: estudiante.nombreContactoEmergencia || estudiante.nombre_contacto_emergencia || '-',
+            telefonoEmergencia: estudiante.telefonoEmergencia || estudiante.telefono_emergencia || '-',
+            alergias: estudiante.alergias || '-',
+            condicionesMedicas: estudiante.condicionesMedicas || estudiante.condiciones_medicas || '-',
+            tipoSangre: estudiante.tipoSangre || estudiante.tipo_sangre || '-'
+        };
+
+        console.log('Valor asignado a anioAcademico:', datos.anioAcademico);
+
+        document.getElementById('detalleId').textContent = datos.id;
+        document.getElementById('detalleNombres').textContent = datos.nombres;
+        document.getElementById('detalleApellidos').textContent = datos.apellidos;
+        document.getElementById('detalleTipoDocumento').textContent = datos.tipoDocumento;
+        document.getElementById('detalleNumeroDocumento').textContent = datos.numeroDocumento;
+        document.getElementById('detalleFechaNacimiento').textContent = datos.fechaNacimiento ? formatearFecha(datos.fechaNacimiento) : '-';
+        document.getElementById('detalleEdad').textContent = datos.fechaNacimiento ? calcularEdad(datos.fechaNacimiento) : '-';
+        document.getElementById('detalleGenero').textContent = datos.genero;
+        document.getElementById('detalleDireccion').textContent = datos.direccion;
+        document.getElementById('detalleTelefono').textContent = datos.telefono;
+        document.getElementById('detalleEmail').textContent = datos.email;
+        document.getElementById('detalleGradoActual').textContent = datos.gradoActual;
+        document.getElementById('detalleSeccionActual').textContent = datos.seccionActual;
+        document.getElementById('detalleAnioAcademico').textContent = datos.anioAcademico;
+        document.getElementById('detalleEstadoEstudiante').textContent = datos.estadoEstudiante;
+        document.getElementById('detalleEstadoEstudiante').className = `badge badge-${datos.estadoEstudiante.toLowerCase()}`;
+        document.getElementById('detalleNombreContactoEmergencia').textContent = datos.nombreContactoEmergencia;
+        document.getElementById('detalleTelefonoEmergencia').textContent = datos.telefonoEmergencia;
+        document.getElementById('detalleAlergias').textContent = datos.alergias;
+        document.getElementById('detalleCondicionesMedicas').textContent = datos.condicionesMedicas;
+        document.getElementById('detalleTipoSangre').textContent = datos.tipoSangre;
+    }
+
+    function abrirModalEditar() {
+        fetch(`${API_BASE}/estudiantes/${estudianteId}`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        })
+        .then(response => {
+            if (!response.ok) throw new Error('Error al cargar datos del estudiante');
+            return response.json();
+        })
+        .then(estudiante => {
+
+            document.getElementById('editarId').value = estudiante.id || '';
+            document.getElementById('editarNombres').value = estudiante.nombres || estudiante.nombre || '';
+            document.getElementById('editarApellidos').value = estudiante.apellidos || estudiante.apellido || '';
+            document.getElementById('editarTipoDocumento').value = estudiante.tipoDocumento || estudiante.tipo_documento || '';
+            document.getElementById('editarNumeroDocumento').value = estudiante.numeroDocumento || estudiante.numero_documento || '';
+            document.getElementById('editarFechaNacimiento').value = estudiante.fechaNacimiento || estudiante.fecha_nacimiento || '';
+            document.getElementById('editarGenero').value = estudiante.genero || '';
+            document.getElementById('editarDireccion').value = estudiante.direccion || '';
+            document.getElementById('editarTelefono').value = estudiante.telefono || '';
+            document.getElementById('editarEmail').value = estudiante.email || '';
+            document.getElementById('editarGradoActual').value = estudiante.gradoActual || estudiante.grado_actual || '';
+            document.getElementById('editarSeccionActual').value = estudiante.seccionActual || estudiante.seccion_actual || '';
+            document.getElementById('editarAnioAcademico').value = estudiante.añoAcademico || estudiante.anioAcademico || estudiante.año_academico || estudiante.anio_academico || '';
+            document.getElementById('editarEstadoEstudiante').value = estudiante.estadoEstudiante || estudiante.estado_estudiante || 'ACTIVO';
+            document.getElementById('editarNombreContactoEmergencia').value = estudiante.nombreContactoEmergencia || estudiante.nombre_contacto_emergencia || '';
+            document.getElementById('editarTelefonoEmergencia').value = estudiante.telefonoEmergencia || estudiante.telefono_emergencia || '';
+            document.getElementById('editarAlergias').value = estudiante.alergias || '';
+            document.getElementById('editarCondicionesMedicas').value = estudiante.condicionesMedicas || estudiante.condiciones_medicas || '';
+            document.getElementById('editarTipoSangre').value = estudiante.tipoSangre || estudiante.tipo_sangre || '';
+
+            const modal = new bootstrap.Modal(document.getElementById('modalEstudiante'));
+            modal.show();
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            mostrarToast('Error al cargar datos para edición', 'danger');
+        });
+    }
+
+    async function guardarCambiosEstudiante() {
+        const form = document.getElementById('formEstudiante');
+        if (!form.checkValidity()) {
+            form.reportValidity();
+            return;
+        }
+
+        let estudianteOriginal;
+        try {
+            const responseOriginal = await fetch(`${API_BASE}/estudiantes/${estudianteId}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (!responseOriginal.ok) {
+                throw new Error('Error al obtener datos del estudiante');
+            }
+
+            estudianteOriginal = await responseOriginal.json();
+        } catch (error) {
+            console.error('Error al obtener estudiante:', error);
+            mostrarToast('Error al cargar datos del estudiante', 'danger');
+            return;
+        }
+
+        const datos = {
+            nombres: document.getElementById('editarNombres').value.trim(),
+            apellidos: document.getElementById('editarApellidos').value.trim(),
+            tipoDocumento: document.getElementById('editarTipoDocumento').value,
+            numeroDocumento: document.getElementById('editarNumeroDocumento').value.trim(),
+            fechaNacimiento: document.getElementById('editarFechaNacimiento').value,
+            genero: document.getElementById('editarGenero').value,
+            apoderadoId: estudianteOriginal.apoderadoId || null,
+
+            direccion: document.getElementById('editarDireccion').value.trim() || null,
+            telefono: document.getElementById('editarTelefono').value.trim() || null,
+            email: document.getElementById('editarEmail').value.trim() || null,
+            nombreContactoEmergencia: document.getElementById('editarNombreContactoEmergencia').value.trim() || null,
+            telefonoEmergencia: document.getElementById('editarTelefonoEmergencia').value.trim() || null,
+            alergias: document.getElementById('editarAlergias').value.trim() || null,
+            condicionesMedicas: document.getElementById('editarCondicionesMedicas').value.trim() || null,
+            tipoSangre: document.getElementById('editarTipoSangre').value || null,
+
+            gradoActual: estudianteOriginal.gradoActual || null,
+            seccionActual: document.getElementById('editarSeccionActual').value.trim() || estudianteOriginal.seccionActual || null,
+            añoAcademico: estudianteOriginal.añoAcademico || estudianteOriginal.anioAcademico || null
+        };
+
+        console.log('Datos a enviar:', datos);
+
+        try {
+            const response = await fetch(`${API_BASE}/estudiantes/${estudianteId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(datos)
+            });
+
+            if (!response.ok) {
+                let errorMsg = 'Error al actualizar estudiante';
+                try {
+                    const error = await response.json();
+                    console.error('Error del servidor:', error);
+
+                    if (typeof error === 'object' && !error.mensaje && !error.message) {
+                        errorMsg = Object.entries(error)
+                            .map(([campo, msg]) => `${campo}: ${msg}`)
+                            .join(', ');
+                    } else {
+                        errorMsg = error.mensaje || error.message || errorMsg;
+                    }
+                } catch (e) {
+                    const textError = await response.text();
+                    errorMsg = textError || errorMsg;
+                }
+                throw new Error(errorMsg);
+            }
+
+            const resultado = await response.json();
+            console.log('Estudiante actualizado:', resultado);
+
+            mostrarToast('Estudiante actualizado correctamente', 'success');
+            bootstrap.Modal.getInstance(document.getElementById('modalEstudiante')).hide();
+
+            await cargarDetallesEstudiante();
+
+        } catch (error) {
+            console.error('Error al guardar:', error);
+            mostrarToast(`Error: ${error.message}`, 'danger');
+        }
+    }
+
+    function formatearFecha(fecha) {
+        if (!fecha) return '-';
+        const date = new Date(fecha);
+        return date.toLocaleDateString('es-PE', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit'
+        });
+    }
+
+    function calcularEdad(fechaNacimiento) {
+        if (!fechaNacimiento) return '-';
+        const hoy = new Date();
+        const nacimiento = new Date(fechaNacimiento);
+        let edad = hoy.getFullYear() - nacimiento.getFullYear();
+        const mes = hoy.getMonth() - nacimiento.getMonth();
+        if (mes < 0 || (mes === 0 && hoy.getDate() < nacimiento.getDate())) {
+            edad--;
+        }
+        return edad;
+    }
+
+    function mostrarToast(mensaje, tipo) {
+        const toast = document.getElementById('notificationToast');
+        const toastBody = document.getElementById('toastMessage');
+        toastBody.textContent = mensaje;
+        toast.classList.remove('bg-success', 'bg-danger');
+        toast.classList.add(`bg-${tipo}`);
+        const bsToast = new bootstrap.Toast(toast);
+        bsToast.show();
+    }
+
+    function cerrarSesion() {
+        localStorage.removeItem('token');
+        window.location.href = 'login.html';
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,1254 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mis Horarios - Colegio César Vallejo</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Colores Institucionales César Vallejo */
+            --institutional-yellow: #FFD700;
+            --institutional-red: #DC143C;
+            --institutional-white: #FFFFFF;
+            --institutional-dark-red: #B71C1C;
+            --institutional-light-yellow: #FFF9C4;
+            --institutional-gold: #DAA520;
+
+            /* Estados de pagos */
+            --pago-pendiente: #FFC107;
+            --pago-vencido: var(--institutional-red);
+            --pago-pagado: #28A745;
+            --pago-parcial: #17A2B8;
+
+            --shadow-color: rgba(220, 20, 60, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #FFD700 0%, #DC143C 50%, #000000 100%);
+            min-height: 100vh;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            position: relative;
+            padding-top: 70px; /* Ajuste para evitar que la navbar tape el contenido */
+        }
+
+        .navbar {
+            background: rgba(255, 255, 255, 0.98) !important;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 8px 32px rgba(220, 20, 60, 0.1);
+            border-bottom: 3px solid var(--institutional-yellow);
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1030;
+            height: 70px; /* Altura fija para la navbar */
+        }
+
+        .navbar-brand img {
+            vertical-align: middle; /* Alinea el logo verticalmente con el texto */
+        }
+
+        .navbar-brand span {
+            vertical-align: middle; /* Alinea el texto verticalmente con el logo */
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg,
+                rgba(220, 20, 60, 0.95) 0%,
+                rgba(183, 28, 28, 0.95) 50%,
+                rgba(255, 215, 0, 0.95) 100%);
+            z-index: -1;
+        }
+
+        .navbar-brand {
+            font-weight: 800;
+            font-size: 1.5rem;
+            color: var(--institutional-red) !important;
+        }
+
+        .navbar-brand i {
+            color: var(--institutional-yellow);
+            text-shadow: 2px 2px 4px rgba(220, 20, 60, 0.3);
+        }
+
+        .main-container {
+            margin-top: 2rem;
+            padding: 0 1rem;
+        }
+
+        .card {
+            border: none;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(220, 20, 60, 0.1);
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.95);
+            transition: all 0.4s ease;
+            overflow: hidden;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 25px 50px rgba(220, 20, 60, 0.15);
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, var(--institutional-red), var(--institutional-dark-red));
+            color: var(--institutional-white);
+            border: none;
+            border-radius: 20px 20px 0 0 !important;
+            padding: 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card-header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 100%;
+            height: 200%;
+            background: var(--institutional-yellow);
+            opacity: 0.1;
+            transform: rotate(45deg);
+        }
+
+        .card-header h4, .card-header h5 {
+            position: relative;
+            z-index: 1;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .summary-card {
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 20px;
+            padding: 2rem;
+            text-align: center;
+            transition: all 0.4s ease;
+            height: 100%;
+            position: relative;
+            overflow: hidden;
+            border: 3px solid transparent;
+        }
+
+        .summary-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 5px;
+            background: linear-gradient(90deg, var(--institutional-yellow), var(--institutional-red));
+        }
+
+        .summary-card:hover {
+            transform: translateY(-10px) scale(1.02);
+            box-shadow: 0 25px 50px rgba(220, 20, 60, 0.2);
+            border-color: var(--institutional-yellow);
+        }
+
+        .summary-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, var(--institutional-red), var(--institutional-yellow));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            transition: all 0.3s ease;
+        }
+
+        .summary-card:hover .summary-icon {
+            transform: scale(1.1) rotate(5deg);
+        }
+
+        .summary-amount {
+            font-size: 2.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--institutional-red), var(--institutional-dark-red));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+            line-height: 1;
+        }
+
+        .summary-label {
+            color: var(--institutional-red);
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+            letter-spacing: 1px;
+        }
+
+        .pago-card {
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 10px 30px rgba(220, 20, 60, 0.1);
+            transition: all 0.3s ease;
+            border-left: 6px solid;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .pago-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, var(--institutional-yellow), var(--institutional-gold));
+            clip-path: polygon(100% 0, 0 0, 100% 100%);
+            opacity: 0.2;
+        }
+
+        .pago-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(220, 20, 60, 0.15);
+            border-left-width: 8px;
+        }
+
+        .pago-pendiente { border-left-color: var(--pago-pendiente); }
+        .pago-vencido { border-left-color: var(--pago-vencido); }
+        .pago-pagado { border-left-color: var(--pago-pagado); }
+        .pago-parcial { border-left-color: var(--pago-parcial); }
+
+        .status-badge {
+            padding: 0.6rem 1.2rem;
+            border-radius: 25px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .badge-pendiente {
+            background: linear-gradient(135deg, #fff3cd, #ffeaa7);
+            color: #856404;
+            border: 2px solid var(--pago-pendiente);
+        }
+
+        .badge-vencido {
+            background: linear-gradient(135deg, #f8d7da, #fab1a0);
+            color: var(--institutional-red);
+            border: 2px solid var(--pago-vencido);
+        }
+
+        .badge-pagado {
+            background: linear-gradient(135deg, #d4edda, #00b894);
+            color: #155724;
+            border: 2px solid var(--pago-pagado);
+        }
+
+        .badge-parcial {
+            background: linear-gradient(135deg, #d1ecf1, #74b9ff);
+            color: #0c5460;
+            border: 2px solid var(--pago-parcial);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--institutional-red), var(--institutional-dark-red));
+            border: none;
+            border-radius: 15px;
+            padding: 0.75rem 2rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 25px rgba(220, 20, 60, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-primary::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, var(--institutional-yellow), transparent);
+            opacity: 0.3;
+            transition: left 0.6s ease;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 35px rgba(220, 20, 60, 0.4);
+        }
+
+        .btn-primary:hover::before {
+            left: 100%;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, var(--pago-pagado), #20c997);
+            border: none;
+            border-radius: 15px;
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, var(--institutional-yellow), var(--institutional-gold));
+            border: none;
+            border-radius: 15px;
+            color: var(--institutional-red);
+            font-weight: 600;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, var(--pago-vencido), var(--institutional-dark-red));
+            border: none;
+            border-radius: 15px;
+        }
+
+        .progress {
+            height: 10px;
+            border-radius: 5px;
+            background: rgba(220, 20, 60, 0.1);
+        }
+
+        .progress-bar {
+            background: linear-gradient(135deg, var(--institutional-yellow), var(--institutional-gold));
+        }
+
+        .filter-tabs {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 0.5rem;
+            box-shadow: 0 5px 15px rgba(220, 20, 60, 0.1);
+            margin-bottom: 2rem;
+        }
+
+        .filter-tab {
+            background: transparent;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 10px;
+            font-weight: 600;
+            color: var(--institutional-red);
+            transition: all 0.3s ease;
+            margin: 0 0.25rem;
+        }
+
+        .filter-tab.active {
+            background: linear-gradient(135deg, var(--institutional-red), var(--institutional-dark-red));
+            color: white;
+            box-shadow: 0 5px 15px rgba(220, 20, 60, 0.3);
+        }
+
+        .filter-tab:hover:not(.active) {
+            background: rgba(220, 20, 60, 0.1);
+        }
+
+        .payment-method-selector {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+
+        .payment-method {
+            background: rgba(255, 255, 255, 0.95);
+            border: 2px solid #e9ecef;
+            border-radius: 15px;
+            padding: 1.5rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .payment-method:hover {
+            border-color: var(--institutional-yellow);
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(220, 20, 60, 0.1);
+        }
+
+        .payment-method.selected {
+            border-color: var(--institutional-red);
+            background: rgba(220, 20, 60, 0.05);
+        }
+
+        .form-control, .form-select {
+            border: 2px solid #e9ecef;
+            border-radius: 15px;
+            padding: 1rem;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: var(--institutional-yellow);
+            box-shadow: 0 0 0 0.25rem rgba(255, 215, 0, 0.25);
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: var(--institutional-red);
+            margin-bottom: 0.8rem;
+        }
+
+        .modal-content {
+            border-radius: 20px;
+            border: 3px solid var(--institutional-yellow);
+            box-shadow: 0 25px 50px rgba(220, 20, 60, 0.2);
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, var(--institutional-red), var(--institutional-dark-red));
+            border-radius: 17px 17px 0 0;
+            border-bottom: 3px solid var(--institutional-yellow);
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 4rem;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(220, 20, 60, 0.1);
+        }
+
+        .loading .spinner-border {
+            width: 4rem;
+            height: 4rem;
+            color: var(--institutional-red);
+            border-width: 0.4rem;
+        }
+
+        .alert {
+            border-radius: 15px;
+            border: none;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .alert-warning {
+            background: linear-gradient(135deg, var(--institutional-light-yellow), rgba(255, 215, 0, 0.1));
+            color: var(--institutional-red);
+            border-left: 5px solid var(--institutional-yellow);
+        }
+
+        .alert-success {
+            background: linear-gradient(135deg, #d4edda, rgba(40, 167, 69, 0.1));
+            color: #155724;
+            border-left: 5px solid var(--pago-pagado);
+        }
+
+        .alert-danger {
+            background: linear-gradient(135deg, #f8d7da, rgba(220, 20, 60, 0.1));
+            color: var(--institutional-red);
+            border-left: 5px solid var(--pago-vencido);
+        }
+
+        .receipt-preview {
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 15px;
+            padding: 2rem;
+            border: 3px dashed var(--institutional-yellow);
+            text-align: center;
+            margin: 1rem 0;
+        }
+
+        .qr-code {
+            width: 150px;
+            height: 150px;
+            background: linear-gradient(135deg, var(--institutional-yellow), var(--institutional-gold));
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 1rem auto;
+            box-shadow: 0 10px 25px rgba(220, 20, 60, 0.2);
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .animate-pulse {
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @media (max-width: 768px) {
+            .main-container {
+                padding: 0 0.5rem;
+            }
+
+            .card-header {
+                padding: 1.5rem;
+            }
+
+            .summary-card {
+                padding: 1.5rem;
+            }
+
+            .pago-card {
+                padding: 1.5rem;
+            }
+
+            .filter-tab {
+                padding: 0.75rem 1rem;
+                font-size: 0.9rem;
+            }
+        }
+
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, var(--institutional-red), var(--institutional-yellow));
+            border-radius: 5px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(135deg, var(--institutional-dark-red), var(--institutional-gold));
+        }
+    </style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar navbar-expand-lg navbar-light fixed-top py-3">
+    <div class="container-fluid px-4">
+        <a class="navbar-brand d-flex align-items-center" href="padre-dashboard.html">
+            <img src="https://imgur.com/Un4G2Du.png" alt="Logo Colegio César Vallejo" style="width: 50px; height: 50px; border-radius: 50%; margin-right: 15px; object-fit: cover;">
+            <span style="font-size: 1.2rem; font-weight: 700; color: var(--institutional-red);">I.E 80351 César Vallejo</span>
+        </a>
+        <div class="nav-item">
+            <a class="nav-link dropdown-toggle d-flex align-items-center py-2" href="#" role="button" data-bs-toggle="dropdown">
+                <div style="width: 40px; height: 40px; background: linear-gradient(135deg, var(--institutional-red), var(--institutional-yellow)); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 15px; box-shadow: 0 4px 15px rgba(220, 20, 60, 0.3);">
+                    <i class="fas fa-user text-white"></i>
+                </div>
+                <span id="userName" style="color: var(--institutional-red); font-weight: 600;">Cargando...</span>
+            </a>
+            <ul class="dropdown-menu dropdown-menu-end mt-2">
+                <li><a class="dropdown-item py-2" href="padre-dashboard.html"><i class="fas fa-home me-2"></i>Dashboard</a></li>
+                <li><a class="dropdown-item text-danger py-2" href="#" onclick="cerrarSesion()"><i class="fas fa-sign-out-alt me-2"></i>Cerrar Sesión</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<!-- CONTENIDO PRINCIPAL -->
+<div class="container-fluid px-4 py-4" style="margin-top: 80px;">
+
+    <!-- Header con selector de estudiante -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card animate__animated animate__fadeInDown">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h4 class="mb-1"><i class="fas fa-calendar-alt me-2"></i>Horarios Académicos</h4>
+                            <p class="mb-0 text-white-50">Consulta los horarios de clases de tus estudiantes</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row align-items-end">
+                        <div class="col-md-4 mb-3">
+                            <label for="selectEstudiante" class="form-label">Seleccionar Estudiante</label>
+                            <select id="selectEstudiante" class="form-select" onchange="cargarHorarioEstudiante()">
+                                <option value="">-- Seleccione un estudiante --</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="selectAnioAcademico" class="form-label">Año Académico</label>
+                            <select id="selectAnioAcademico" class="form-select" onchange="cargarHorarioEstudiante()">
+                                <option value="">Todos</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <button class="btn btn-primary w-100" onclick="cargarHorarioEstudiante()">
+                                <i class="fas fa-search me-2"></i>Buscar Horario
+                            </button>
+                        </div>
+                        <div class="col-md-2 mb-3">
+                            <button class="btn btn-success w-100" onclick="imprimirHorario()" id="btnImprimir" disabled>
+                                <i class="fas fa-print me-2"></i>Imprimir
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Información del Estudiante -->
+    <div class="row mb-4 animate__animated animate__fadeInUp" id="infoEstudianteContainer" style="display: none;">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <p class="mb-1"><strong><i class="fas fa-user me-2 text-primary"></i>Estudiante:</strong></p>
+                            <p id="infoNombreEstudiante" class="text-muted">-</p>
+                        </div>
+                        <div class="col-md-2">
+                            <p class="mb-1"><strong><i class="fas fa-id-card me-2 text-primary"></i>Documento:</strong></p>
+                            <p id="infoDocumento" class="text-muted">-</p>
+                        </div>
+                        <div class="col-md-2">
+                            <p class="mb-1"><strong><i class="fas fa-graduation-cap me-2 text-primary"></i>Nivel:</strong></p>
+                            <p id="infoNivel" class="text-muted">-</p>
+                        </div>
+                        <div class="col-md-2">
+                            <p class="mb-1"><strong><i class="fas fa-layer-group me-2 text-primary"></i>Grado:</strong></p>
+                            <p id="infoGrado" class="text-muted">-</p>
+                        </div>
+                        <div class="col-md-2">
+                            <p class="mb-1"><strong><i class="fas fa-users me-2 text-primary"></i>Sección:</strong></p>
+                            <p id="infoSeccion" class="text-muted">-</p>
+                        </div>
+                        <div class="col-md-1 text-end">
+                            <span id="infoEstadoMatricula" class="badge">-</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Horario Semanal -->
+    <div class="row mb-4 animate__animated animate__fadeInUp" id="horarioContainer" style="display: none;">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-table me-2"></i>Horario Semanal</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover">
+                            <thead>
+                            <tr>
+                                <th class="text-center" style="width: 120px;">Hora</th>
+                                <th class="text-center">Lunes</th>
+                                <th class="text-center">Martes</th>
+                                <th class="text-center">Miércoles</th>
+                                <th class="text-center">Jueves</th>
+                                <th class="text-center">Viernes</th>
+                            </tr>
+                            </thead>
+                            <tbody id="tablaHorario">
+                            <tr>
+                                <td colspan="6" class="text-center py-5">
+                                    <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
+                                    <p class="text-muted">No hay horarios disponibles</p>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lista de Cursos Matriculados -->
+    <div class="row animate__animated animate__fadeInUp" id="cursosContainer" style="display: none;">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-book me-2"></i>Cursos Matriculados</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                            <tr>
+                                <th>Código</th>
+                                <th>Curso</th>
+                                <th>Profesor</th>
+                                <th>Horario</th>
+                                <th>Aula</th>
+                                <th>Modalidad</th>
+                                <th>Créditos</th>
+                                <th>Período</th>
+                                <th>Estado</th>
+                            </tr>
+                            </thead>
+                            <tbody id="tablaCursos">
+                            <tr>
+                                <td colspan="9" class="text-center">No hay cursos matriculados</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mensaje cuando no hay datos -->
+    <div class="row animate__animated animate__fadeIn" id="mensajeVacio">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <i class="fas fa-calendar-times fa-5x text-muted mb-4"></i>
+                    <h4 class="text-muted">No hay horarios disponibles</h4>
+                    <p class="text-muted">Selecciona un estudiante para ver su horario académico</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Modal Detalle del Curso -->
+<div class="modal fade" id="modalDetalleCurso" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title text-white"><i class="fas fa-info-circle me-2"></i>Detalles del Curso</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="detalleCursoContent">
+                <!-- Contenido dinámico -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast de Notificaciones -->
+<div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 9999;">
+    <div id="notificationToast" class="toast" role="alert">
+        <div class="toast-header">
+            <i class="fas fa-bell me-2 text-primary"></i>
+            <strong class="me-auto">César Vallejo</strong>
+            <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+        </div>
+        <div class="toast-body" id="toastMessage"></div>
+    </div>
+</div>
+
+<!-- Scripts -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    const API_BASE_URL = 'http://localhost:8080/api';
+    let token = '';
+    let usuarioActual = null;
+    let estudiantesData = [];
+    let horarioActual = null;
+    let modalDetalleCurso = null;
+
+    const HORAS_DIA = [
+        '6:45 - 7:00',
+        '7:00 - 7:50',
+        '7:50 - 8:40',
+        '8:40 - 9:30',
+        '9:30 - 10:20',
+        '10:20 - 10:50',
+        '10:50 - 11:40',
+        '11:40 - 12:30',
+        '12:30 - 1:10',
+        '1:10 - 2:00',
+        '2:00 - 2:50'
+    ];
+
+    const DIAS_SEMANA = ['LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES'];
+
+    const COLORES_CURSOS = [
+        '#FFB6C1', '#87CEEB', '#98FB98', '#FFD700', '#DDA0DD',
+        '#F0E68C', '#E0BBE4', '#FFDAB9', '#B0E0E6', '#FFDEAD',
+        '#D3D3D3', '#FFA07A', '#20B2AA', '#F5DEB3', '#FFC0CB',
+        '#ADD8E6', '#90EE90', '#FFFFE0', '#E6E6FA', '#FFE4B5'
+    ];
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        token = localStorage.getItem('token') || '';
+        modalDetalleCurso = new bootstrap.Modal(document.getElementById('modalDetalleCurso'));
+        await validarSesion();
+        await cargarEstudiantes();
+        cargarAniosAcademicos();
+    });
+
+    async function validarSesion() {
+        if (!token) {
+            window.location.href = 'login.html';
+            return;
+        }
+        try {
+            const res = await fetch(`${API_BASE_URL}/auth/validate`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (!res.ok) throw new Error('Sesión inválida');
+            const data = await res.json();
+            if (data?.valido) {
+                usuarioActual = data.usuario;
+                document.getElementById('userName').textContent = usuarioActual.nombre || 'Usuario';
+            } else {
+                throw new Error('Sesión no válida');
+            }
+        } catch (err) {
+            console.error('Error validando sesión:', err);
+            localStorage.removeItem('token');
+            window.location.href = 'login.html';
+        }
+    }
+
+    async function cargarEstudiantes() {
+        try {
+            const apoderadoId = usuarioActual.id;
+            const res = await fetch(`${API_BASE_URL}/estudiantes/apoderado/${apoderadoId}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (!res.ok) throw new Error('Error al cargar estudiantes');
+            estudiantesData = await res.json();
+            const selectEstudiante = document.getElementById('selectEstudiante');
+            selectEstudiante.innerHTML = '<option value="">-- Seleccione un estudiante --</option>';
+            estudiantesData.forEach(est => {
+                const option = document.createElement('option');
+                option.value = est.id;
+                option.textContent = `${est.nombres} ${est.apellidos} - ${est.numeroDocumento}`;
+                selectEstudiante.appendChild(option);
+            });
+        } catch (err) {
+            console.error('Error cargando estudiantes:', err);
+            mostrarError('Error al cargar la lista de estudiantes');
+        }
+    }
+
+    function cargarAniosAcademicos() {
+        const selectAnio = document.getElementById('selectAnioAcademico');
+        fetch(`${API_BASE_URL}/matriculas/anios`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            }
+        })
+        .then(res => {
+            if (!res.ok) throw new Error('Error al cargar años académicos');
+            return res.json();
+        })
+        .then(anios => {
+            if (!Array.isArray(anios)) return;
+            selectAnio.innerHTML = '<option value="">Todos</option>';
+            anios.forEach(anio => {
+                const option = document.createElement('option');
+                option.value = anio;
+                option.textContent = anio;
+                if (anio == new Date().getFullYear()) option.selected = true;
+                selectAnio.appendChild(option);
+            });
+        })
+        .catch(err => console.error('Error cargando años académicos:', err));
+    }
+
+    async function cargarHorarioEstudiante() {
+        const estudianteId = document.getElementById('selectEstudiante').value;
+        const anioAcademico = document.getElementById('selectAnioAcademico').value;
+
+        if (!estudianteId) {
+            mostrarError('Por favor seleccione un estudiante');
+            return;
+        }
+
+        try {
+            const apoderadoId = usuarioActual.id;
+            const res = await fetch(`${API_BASE_URL}/matriculas/apoderado/${apoderadoId}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (!res.ok) throw new Error('Error al cargar matrículas');
+
+            let matriculas = await res.json();
+            matriculas = matriculas.filter(m => m.estudianteId === parseInt(estudianteId));
+            if (anioAcademico) {
+                matriculas = matriculas.filter(m => m.anioAcademico === anioAcademico);
+            }
+
+            const matriculasActivas = matriculas.filter(m =>
+                m.estado === 'APROBADA' || m.estado === 'COMPLETADA'
+            );
+
+            if (matriculasActivas.length === 0) {
+                mostrarMensajeVacio();
+                mostrarError('No se encontraron matrículas activas para este estudiante');
+                return;
+            }
+
+            const matricula = matriculasActivas[0];
+            horarioActual = matricula;
+            mostrarInfoEstudiante(matricula);
+            await cargarCursosMatricula(matricula);
+            document.getElementById('btnImprimir').disabled = false;
+
+        } catch (err) {
+            console.error('Error cargando horario:', err);
+            mostrarError('Error al cargar el horario del estudiante');
+            mostrarMensajeVacio();
+        }
+    }
+
+    function mostrarInfoEstudiante(matricula) {
+        document.getElementById('infoNombreEstudiante').textContent = matricula.nombreEstudiante || '-';
+        document.getElementById('infoDocumento').textContent = matricula.documentoEstudiante || '-';
+        document.getElementById('infoNivel').textContent = matricula.nivelAcademico || '-';
+        document.getElementById('infoGrado').textContent = matricula.grado || '-';
+        document.getElementById('infoSeccion').textContent = matricula.seccion || '-';
+        const badgeEstado = document.getElementById('infoEstadoMatricula');
+        badgeEstado.textContent = matricula.estadoDescripcion || matricula.estado;
+        badgeEstado.className = 'badge ' + obtenerClaseEstado(matricula.estado);
+        document.getElementById('infoEstudianteContainer').style.display = 'block';
+        document.getElementById('mensajeVacio').style.display = 'none';
+    }
+
+    function parsearHorario(horarioStr) {
+        console.log('🔍 Parseando horario:', horarioStr);
+        if (!horarioStr || horarioStr === '-') {
+            return { dias: [], horaInicio: '', horaFin: '' };
+        }
+        let dias = [];
+        let horaInicio = '';
+        let horaFin = '';
+        const match = horarioStr.match(/(.*?)(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})/);
+        if (match) {
+            const textoDias = match[1];
+            horaInicio = match[2];
+            horaFin = match[3];
+            dias = textoDias.split(/[,;]/).map(d => d.trim()).filter(d => d && d.length > 2).map(d => d.toUpperCase());
+            console.log('✅ Parseo exitoso - días:', dias, 'horas:', horaInicio, '-', horaFin);
+        } else {
+            console.warn('⚠️ No se pudo parsear el horario:', horarioStr);
+        }
+        return { dias, horaInicio, horaFin };
+    }
+
+    async function cargarCursosMatricula(matricula) {
+        console.log('=== INICIANDO CARGA DE CURSOS ===');
+        const cursos = matricula.cursos || [];
+        console.log('Cursos en la matrícula:', cursos);
+
+        if (cursos.length === 0) {
+            mostrarError('Esta matrícula no tiene cursos asignados');
+            return;
+        }
+
+        try {
+            const nivel = matricula.nivelAcademico || 'SECUNDARIA';
+            const res = await fetch(`${API_BASE_URL}/cursos/disponibles?nivel=${encodeURIComponent(nivel)}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (!res.ok) throw new Error('Error al cargar cursos disponibles');
+
+            const cursosDisponibles = await res.json();
+            console.log('Cursos disponibles:', cursosDisponibles);
+
+            const cursosConProfesor = cursos.map(curso => {
+                const detalle = cursosDisponibles.find(cd => cd.id === curso.cursoId);
+                const horarioParseado = parsearHorario(detalle?.horarioCompleto || '');
+                return {
+                    ...curso,
+                    id: curso.cursoId,
+                    nombre: detalle?.nombre || curso.nombreCurso || 'Sin nombre',
+                    codigo: detalle?.codigo || curso.codigoCurso || '-',
+                    nombreProfesor: detalle?.nombreProfesor || 'Sin asignar',
+                    horarioCompleto: detalle?.horarioCompleto || '-',
+                    diasSemana: horarioParseado.dias.join(','),
+                    horaInicio: horarioParseado.horaInicio,
+                    horaFin: horarioParseado.horaFin,
+                    modalidad: detalle?.modalidad || 'PRESENCIAL',
+                    aula: detalle?.aula || '-',
+                    creditos: detalle?.creditos || 0,
+                    periodo: detalle?.periodo || '-'
+                };
+            });
+
+            console.log('Cursos procesados:', cursosConProfesor);
+            renderizarTablaCursos(cursosConProfesor);
+            generarHorarioSemanal(cursosConProfesor);
+            document.getElementById('cursosContainer').style.display = 'block';
+            document.getElementById('horarioContainer').style.display = 'block';
+
+        } catch (err) {
+            console.error('Error procesando cursos:', err);
+            mostrarError('Error al cargar los cursos de la matrícula');
+        }
+    }
+
+    function renderizarTablaCursos(cursos) {
+        const tbody = document.getElementById('tablaCursos');
+        if (cursos.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="9" class="text-center">No hay cursos matriculados</td></tr>';
+            return;
+        }
+        tbody.innerHTML = cursos.map(curso => {
+            const cursoId = curso.id || 0;
+            return `
+                <tr onclick="verDetalleCurso(${cursoId})" style="cursor: pointer;">
+                    <td>${curso.codigo || '-'}</td>
+                    <td><strong>${curso.nombre || '-'}</strong></td>
+                    <td>${curso.nombreProfesor || 'Sin asignar'}</td>
+                    <td>${curso.horarioCompleto || '-'}</td>
+                    <td>${curso.aula || '-'}</td>
+                    <td><span class="badge bg-info">${curso.modalidad || 'PRESENCIAL'}</span></td>
+                    <td class="text-center">${curso.creditos || 0}</td>
+                    <td>${curso.periodo || '-'}</td>
+                    <td><span class="badge ${curso.aprobado ? 'bg-success' : 'bg-warning'}">${curso.estado || '-'}</span></td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    function generarHashString(str) {
+        if (!str) return 0;
+        let hash = 0;
+        for (let i = 0; i < str.length; i++) {
+            const char = str.charCodeAt(i);
+            hash = ((hash << 5) - hash) + char;
+            hash = hash & hash;
+        }
+        return Math.abs(hash);
+    }
+
+    function obtenerColorCurso(nombreCurso) {
+        if (!nombreCurso) return '#e9ecef';
+        const hash = generarHashString(nombreCurso);
+        const indice = hash % COLORES_CURSOS.length;
+        return COLORES_CURSOS[indice];
+    }
+
+    function generarHorarioSemanal(cursos) {
+        const tbody = document.getElementById('tablaHorario');
+        const horario = {};
+
+        HORAS_DIA.forEach(hora => {
+            horario[hora] = { LUNES: null, MARTES: null, MIERCOLES: null, JUEVES: null, VIERNES: null };
+        });
+
+        console.log('📅 Generando horario con cursos:', cursos);
+
+        cursos.forEach(curso => {
+            if (!curso.horaInicio || !curso.horaFin) return;
+            const diasCurso = curso.diasSemana ? curso.diasSemana.split(',').map(d => d.trim().toUpperCase()) : [];
+            if (diasCurso.length === 0) return;
+
+            HORAS_DIA.forEach(franja => {
+                const [horaInicioFranja, horaFinFranja] = franja.split(' - ');
+                if (horaCoincide(curso.horaInicio, curso.horaFin, horaInicioFranja, horaFinFranja)) {
+                    diasCurso.forEach(dia => {
+                        const diaFormateado = formatearDia(dia);
+                        if (horario[franja] && horario[franja][diaFormateado] !== undefined) {
+                            horario[franja][diaFormateado] = {
+                                nombre: curso.nombre,
+                                codigo: curso.codigo,
+                                profesor: curso.nombreProfesor,
+                                aula: curso.aula,
+                                cursoId: curso.id,
+                                color: obtenerColorCurso(curso.nombre)
+                            };
+                            console.log(`✅ ${curso.nombre} en ${franja} - ${diaFormateado}`);
+                        }
+                    });
+                }
+            });
+        });
+
+        tbody.innerHTML = HORAS_DIA.map(hora => {
+            const esRecreo = hora === '10:20 - 10:50';
+            const esAlmuerzo = hora === '12:30 - 1:10';
+            const esReflexion = hora === '6:45 - 7:00';
+
+            if (esRecreo) {
+                return `<tr class="table-warning">
+                            <td class="text-center"><strong>${hora}</strong></td>
+                            <td colspan="5" class="text-center"><strong><i class="fas fa-coffee me-2"></i>DESCANSO</strong></td>
+                        </tr>`;
+            }
+            if (esAlmuerzo) {
+                return `<tr class="table-warning">
+                            <td class="text-center"><strong>${hora}</strong></td>
+                            <td colspan="5" class="text-center"><strong><i class="fas fa-utensils me-2"></i>ALMUERZO</strong></td>
+                        </tr>`;
+            }
+            if (esReflexion) {
+                return `<tr class="table-info">
+                            <td class="text-center"><strong>${hora}</strong></td>
+                            <td colspan="2" class="text-center"></td>
+                            <td colspan="3" class="text-center"><strong>REFLEXIÓN</strong></td>
+                        </tr>`;
+            }
+
+            return `<tr>
+                        <td class="text-center align-middle"><strong>${hora}</strong></td>
+                        ${DIAS_SEMANA.map(dia => {
+                            const curso = horario[hora][dia];
+                            if (curso) {
+                                return `<td onclick="verDetalleCurso(${curso.cursoId})"
+                                            style="cursor: pointer; background-color: ${curso.color}; color: #000;
+                                                   padding: 12px; text-align: center; vertical-align: middle;
+                                                   font-weight: 600; border: 2px solid #dee2e6;">
+                                            <div style="font-size: 0.9rem;">${curso.nombre}</div>
+                                        </td>`;
+                            }
+                            return `<td style="background-color: #fff; border: 1px solid #dee2e6;"></td>`;
+                        }).join('')}
+                    </tr>`;
+        }).join('');
+    }
+
+    function horaCoincide(cursoInicio, cursoFin, franjaInicio, franjaFin) {
+        const cursoInicioMinutos = convertirAMinutos(cursoInicio);
+        const cursoFinMinutos = convertirAMinutos(cursoFin);
+        const franjaInicioMinutos = convertirAMinutos(franjaInicio);
+        const franjaFinMinutos = convertirAMinutos(franjaFin);
+        return cursoInicioMinutos < franjaFinMinutos && cursoFinMinutos > franjaInicioMinutos;
+    }
+
+    function convertirAMinutos(hora) {
+        const [hh, mm] = hora.split(':').map(Number);
+        return hh * 60 + mm;
+    }
+
+    function formatearDia(dia) {
+        const dias = {
+            'LUNES': 'LUNES',
+            'MARTES': 'MARTES',
+            'MIERCOLES': 'MIERCOLES',
+            'MIÉRCOLES': 'MIERCOLES',
+            'JUEVES': 'JUEVES',
+            'VIERNES': 'VIERNES',
+            'SABADO': 'SÁBADO',
+            'SÁBADO': 'SÁBADO'
+        };
+        return dias[dia.toUpperCase()] || dia.toUpperCase();
+    }
+
+    async function verDetalleCurso(cursoId) {
+        try {
+            const res = await fetch(`${API_BASE_URL}/cursos/disponibles?nivel=${encodeURIComponent(horarioActual.nivelAcademico)}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (!res.ok) throw new Error('Error al cargar detalles del curso');
+
+            const cursosDisponibles = await res.json();
+            const curso = cursosDisponibles.find(c => c.id === cursoId);
+            if (!curso) throw new Error('Curso no encontrado');
+
+            const html = `
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="mb-3"><i class="fas fa-info-circle me-2"></i>Información General</h6>
+                        <p><strong>Código:</strong> ${curso.codigo || '-'}</p>
+                        <p><strong>Nombre:</strong> ${curso.nombre || '-'}</p>
+                        <p><strong>Descripción:</strong> ${curso.descripcion || 'Sin descripción'}</p>
+                        <p><strong>Nivel:</strong> ${curso.nivelAcademico || '-'}</p>
+                        <p><strong>Grado:</strong> ${curso.grado || '-'}</p>
+                        <p><strong>Sección:</strong> ${curso.seccion || '-'}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="mb-3"><i class="fas fa-graduation-cap me-2"></i>Detalles Académicos</h6>
+                        <p><strong>Profesor:</strong> ${curso.nombreProfesor || 'Sin asignar'}</p>
+                        <p><strong>Modalidad:</strong> <span class="badge bg-info">${curso.modalidad || 'PRESENCIAL'}</span></p>
+                        <p><strong>Créditos:</strong> ${curso.creditos || 0}</p>
+                        <p><strong>Horas Semanales:</strong> ${curso.horasSemanales || 0}</p>
+                        <p><strong>Horario:</strong> ${curso.horarioCompleto || '-'}</p>
+                        <p><strong>Aula:</strong> ${curso.aula || '-'}</p>
+                    </div>
+                    <div class="col-12 mt-3">
+                        <h6 class="mb-3"><i class="fas fa-calendar me-2"></i>Período y Fechas</h6>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <p><strong>Año Académico:</strong> ${curso.anioAcademico || '-'}</p>
+                            </div>
+                            <div class="col-md-4">
+                                <p><strong>Período:</strong> ${curso.periodo || '-'}</p>
+                            </div>
+                            <div class="col-md-4">
+                                <p><strong>Capacidad:</strong> ${curso.capacidadActual || 0} / ${curso.capacidadMaxima || 0}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>Fecha Inicio:</strong> ${formatearFecha(curso.fechaInicio) || '-'}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>Fecha Fin:</strong> ${formatearFecha(curso.fechaFin) || '-'}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('detalleCursoContent').innerHTML = html;
+            modalDetalleCurso.show();
+
+        } catch (err) {
+            console.error('Error cargando detalle del curso:', err);
+            mostrarError('Error al cargar los detalles del curso');
+        }
+    }
+
+    function imprimirHorario() {
+        window.print();
+    }
+
+    function mostrarMensajeVacio() {
+        document.getElementById('infoEstudianteContainer').style.display = 'none';
+        document.getElementById('horarioContainer').style.display = 'none';
+        document.getElementById('cursosContainer').style.display = 'none';
+        document.getElementById('mensajeVacio').style.display = 'block';
+        document.getElementById('btnImprimir').disabled = true;
+    }
+
+    function obtenerClaseEstado(estado) {
+        const clases = {
+            'PENDIENTE': 'bg-warning',
+            'APROBADA': 'bg-success',
+            'RECHAZADA': 'bg-danger',
+            'COMPLETADA': 'bg-primary',
+            'EN_PROCESO': 'bg-info'
+        };
+        return clases[estado] || 'bg-secondary';
+    }
+
+    function formatearFecha(fecha) {
+        if (!fecha) return '-';
+        const date = new Date(fecha);
+        return date.toLocaleDateString('es-PE', { year: 'numeric', month: 'long', day: 'numeric' });
+    }
+
+    function mostrarExito(mensaje) {
+        document.getElementById('toastMessage').textContent = mensaje;
+        const toast = new bootstrap.Toast(document.getElementById('notificationToast'));
+        toast.show();
+    }
+
+    function mostrarError(mensaje) {
+        document.getElementById('toastMessage').textContent = mensaje;
+        const toast = new bootstrap.Toast(document.getElementById('notificationToast'));
+        toast.show();
+    }
+
+    function cerrarSesion() {
+        localStorage.removeItem('token');
+        window.location.href = 'login.html';
+    }
+</script>
+
+</body>
+</html>

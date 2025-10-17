@@ -1,0 +1,2281 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Administrativo - Colegio César Vallejo</title>
+    <!-- External Libraries -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Institutional Colors */
+            --institutional-yellow: #FFD700;
+            --institutional-red: #DC143C;
+            --institutional-white: #FFFFFF;
+            --institutional-dark-red: #B71C1C;
+            --institutional-light-yellow: #FFF9C4;
+            --institutional-gold: #DAA520;
+            /* Status Colors */
+            --success-color: #28a745;
+            --warning-color: #ffc107;
+            --danger-color: var(--institutional-red);
+            --info-color: #17a2b8;
+            --light-color: #f8f9fa;
+            --dark-color: #343a40;
+            --shadow-color: rgba(220, 20, 60, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        /* 🎨 Estilos para Formularios Institucionales César Vallejo */
+
+.form-control, .form-select {
+    border: 2px solid #e9ecef;
+    border-radius: 15px;
+    padding: 1rem;
+    transition: all 0.3s ease;
+    font-weight: 500;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: var(--institutional-yellow);
+    box-shadow: 0 0 0 0.25rem rgba(255, 215, 0, 0.25);
+}
+
+.form-label {
+    font-weight: 600;
+    color: var(--institutional-red);
+    margin-bottom: 0.8rem;
+}
+
+/* 🧾 Modales (para formularios emergentes) */
+.modal-content {
+    border-radius: 20px;
+    border: 3px solid var(--institutional-yellow);
+    box-shadow: 0 25px 50px rgba(220, 20, 60, 0.2);
+}
+
+.modal-header {
+    background: linear-gradient(135deg, var(--institutional-red), var(--institutional-dark-red));
+    border-radius: 17px 17px 0 0;
+    border-bottom: 3px solid var(--institutional-yellow);
+}
+
+/* ✅ Botones del formulario */
+.btn-primary {
+    background: linear-gradient(135deg, var(--institutional-red), var(--institutional-dark-red));
+    border: none;
+    border-radius: 15px;
+    padding: 0.75rem 2rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 8px 25px rgba(220, 20, 60, 0.3);
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-primary::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, var(--institutional-yellow), transparent);
+    opacity: 0.3;
+    transition: left 0.6s ease;
+}
+
+.btn-primary:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 15px 35px rgba(220, 20, 60, 0.4);
+}
+
+.btn-primary:hover::before {
+    left: 100%;
+}
+
+.btn-success {
+    background: linear-gradient(135deg, var(--pago-pagado), #20c997);
+    border: none;
+    border-radius: 15px;
+    font-weight: 600;
+}
+
+.btn-warning {
+    background: linear-gradient(135deg, var(--institutional-yellow), var(--institutional-gold));
+    border: none;
+    border-radius: 15px;
+    color: var(--institutional-red);
+    font-weight: 600;
+}
+
+.btn-danger {
+    background: linear-gradient(135deg, var(--pago-vencido), var(--institutional-dark-red));
+    border: none;
+    border-radius: 15px;
+    font-weight: 600;
+}
+
+/* ⚠️ Alertas de validación del formulario */
+.alert {
+    border-radius: 15px;
+    border: none;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.alert-warning {
+    background: linear-gradient(135deg, var(--institutional-light-yellow), rgba(255, 215, 0, 0.1));
+    color: var(--institutional-red);
+    border-left: 5px solid var(--institutional-yellow);
+}
+
+.alert-success {
+    background: linear-gradient(135deg, #d4edda, rgba(40, 167, 69, 0.1));
+    color: #155724;
+    border-left: 5px solid var(--pago-pagado);
+}
+
+.alert-danger {
+    background: linear-gradient(135deg, #f8d7da, rgba(220, 20, 60, 0.1));
+    color: var(--institutional-red);
+    border-left: 5px solid var(--pago-vencido);
+}
+
+
+        body {
+            background: linear-gradient(135deg, var(--institutional-red) 0%, var(--institutional-dark-red) 50%, var(--institutional-yellow) 100%);
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(220, 20, 60, 0.95) 0%, rgba(183, 28, 28, 0.95) 50%, rgba(255, 215, 0, 0.95) 100%);
+            z-index: -1;
+        }
+
+        .navbar {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(20px);
+            box-shadow: 0 8px 32px var(--shadow-color);
+            border-bottom: 3px solid var(--institutional-yellow);
+        }
+
+        .navbar-brand {
+            font-weight: 800;
+            font-size: 1.5rem;
+            color: var(--institutional-red) !important;
+        }
+
+        .navbar-brand i {
+            color: var(--institutional-yellow);
+            text-shadow: 2px 2px 4px var(--shadow-color);
+        }
+
+        .admin-badge {
+            background: linear-gradient(135deg, var(--institutional-yellow), var(--institutional-gold));
+            color: var(--institutional-red);
+            padding: 0.25rem 0.75rem;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            margin-left: 10px;
+            box-shadow: 0 2px 10px rgba(255, 215, 0, 0.3);
+        }
+
+        .main-container {
+            margin-top: 5rem;
+            padding: 0 1rem;
+        }
+
+        .card {
+            border: none;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px var(--shadow-color);
+            background: rgba(255, 255, 255, 0.95);
+            transition: all 0.4s ease;
+            overflow: hidden;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 25px 50px rgba(220, 20, 60, 0.15);
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, var(--institutional-red), var(--institutional-dark-red));
+            color: var(--institutional-white);
+            border-radius: 20px 20px 0 0;
+            padding: 2rem;
+            position: relative;
+        }
+
+        .card-header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 100%;
+            height: 200%;
+            background: var(--institutional-yellow);
+            opacity: 0.1;
+            transform: rotate(45deg);
+        }
+
+        .card-header h4, .card-header h5 {
+            position: relative;
+            z-index: 1;
+            font-weight: 700;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 20px;
+            padding: 2rem;
+            text-align: center;
+            transition: all 0.4s ease;
+            border: 3px solid transparent;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 5px;
+            background: linear-gradient(90deg, var(--institutional-yellow), var(--institutional-red));
+        }
+
+        .stat-card:hover {
+            transform: translateY(-15px) scale(1.02);
+            border-color: var(--institutional-yellow);
+        }
+
+        .stat-icon {
+            font-size: 3.5rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, var(--institutional-red), var(--institutional-yellow));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--institutional-red), var(--institutional-dark-red));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .stat-label {
+            color: var(--institutional-red);
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+            letter-spacing: 1px;
+        }
+
+        .quick-action-btn {
+            background: rgba(255, 255, 255, 0.98);
+            border: 2px solid transparent;
+            border-radius: 20px;
+            padding: 1.5rem;
+            text-decoration: none;
+            color: var(--institutional-red);
+            transition: all 0.3s ease;
+            display: block;
+            text-align: center;
+            box-shadow: 0 10px 20px var(--shadow-color);
+        }
+
+        .quick-action-btn:hover {
+            transform: translateY(-10px);
+            border-color: var(--institutional-yellow);
+            color: var(--institutional-red);
+        }
+
+        .quick-action-btn i {
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, var(--institutional-red), var(--institutional-yellow));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 0.5rem;
+        }
+
+        .alert-item {
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            border-left: 5px solid;
+            transition: all 0.3s ease;
+        }
+
+        .alert-item:hover {
+            transform: translateX(5px);
+        }
+
+        .alert-warning { border-left-color: var(--warning-color); }
+        .alert-danger { border-left-color: var(--danger-color); }
+        .alert-info { border-left-color: var(--info-color); }
+        .alert-success { border-left-color: var(--success-color); }
+
+        .matricula-item {
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 8px 25px var(--shadow-color);
+            transition: all 0.3s ease;
+            border-left: 4px solid;
+        }
+
+        .matricula-item:hover {
+            transform: translateY(-3px);
+        }
+
+        .matricula-pendiente { border-left-color: var(--warning-color); }
+        .matricula-aprobada { border-left-color: var(--success-color); }
+        .matricula-rechazada { border-left-color: var(--danger-color); }
+
+        .status-badge {
+            padding: 0.5rem 1rem;
+            border-radius: 25px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .badge-pendiente {
+            background: linear-gradient(135deg, var(--institutional-light-yellow), var(--institutional-yellow));
+            color: var(--institutional-red);
+        }
+
+        .badge-aprobada {
+            background: linear-gradient(135deg, #d4edda, #c3e6cb);
+            color: #155724;
+        }
+
+        .badge-rechazada {
+            background: linear-gradient(135deg, #f8d7da, #f5c6cb);
+            color: var(--institutional-red);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--institutional-red), var(--institutional-dark-red));
+            border: none;
+            border-radius: 15px;
+            padding: 0.75rem 2rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+        }
+
+        .btn-success, .btn-warning, .btn-danger {
+            border: none;
+            border-radius: 15px;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, var(--success-color), #20c997);
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, var(--institutional-yellow), var(--institutional-gold));
+            color: var(--institutional-red);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, var(--danger-color), var(--institutional-dark-red));
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 3rem;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+        }
+
+        .loading .spinner-border {
+            width: 3rem;
+            height: 3rem;
+            color: var(--institutional-red);
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .animate-pulse {
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @media (max-width: 768px) {
+            .main-container { padding: 0 0.5rem; }
+            .card-header { padding: 1.5rem; }
+            .stat-card { padding: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+<!-- Navigation Bar -->
+<nav class="navbar navbar-expand-lg navbar-light fixed-top">
+    <div class="container-fluid">
+        <a class="navbar-brand d-flex align-items-center" href="#">
+            <i class="fas fa-graduation-cap me-2"></i>
+            <span>César Vallejo</span>
+            <span class="admin-badge">ADMINISTRADOR</span>
+        </a>
+        <div class="navbar-nav ms-auto d-flex flex-row align-items-center">
+            <div class="nav-item dropdown me-3">
+                <a class="nav-link dropdown-toggle position-relative" href="#" role="button" data-bs-toggle="dropdown">
+                    <i class="fas fa-bell fs-5" style="color: var(--institutional-red);"></i>
+                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger animate-pulse" id="alertCount">0</span>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-end" id="alertDropdown">
+                    <li><h6 class="dropdown-header">Alertas del Sistema</h6></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li id="noAlerts"><a class="dropdown-item text-muted" href="#">No hay alertas</a></li>
+                </ul>
+            </div>
+            <div class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" role="button" data-bs-toggle="dropdown">
+                    <div style="width: 40px; height: 40px; background: linear-gradient(135deg, var(--institutional-red), var(--institutional-yellow)); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 10px;">
+                        <i class="fas fa-user-shield text-white"></i>
+                    </div>
+                    <span id="adminName" style="color: var(--institutional-red); font-weight: 600;">Cargando...</span>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li><a class="dropdown-item text-danger" href="#" onclick="cerrarSesion()"><i class="fas fa-sign-out-alt me-2"></i>Cerrar Sesión</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<!-- Main Content -->
+<div class="container-fluid main-container">
+    <!-- Loading Indicator -->
+    <div id="loading" class="loading">
+        <div class="spinner-border" role="status"></div>
+        <p class="mt-3">Cargando panel administrativo...</p>
+    </div>
+
+    <!-- Dashboard Content -->
+    <div id="dashboardContent" style="display: none;">
+        <!-- Welcome Section -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card animate__animated animate__fadeInDown">
+                    <div class="card-header">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h4 class="mb-0"><i class="fas fa-tachometer-alt me-2"></i>Panel Administrativo</h4>
+                                <p class="mb-0">Sistema de Gestión Académica - César Vallejo</p>
+                            </div>
+                            <div class="text-end">
+                                <small class="opacity-75">Última actualización:</small><br>
+                                <small class="opacity-75" id="lastUpdate">--:--</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="row" id="statsContainer"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card animate__animated animate__fadeInUp">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-bolt me-2"></i>Acciones Administrativas</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-2 col-sm-4 col-6">
+                                <a href="#" class="quick-action-btn" onclick="gestionarMatriculas()">
+                                    <i class="fas fa-file-alt d-block"></i>
+                                    <strong>Gestionar<br>Matrículas</strong>
+                                </a>
+                            </div>
+                            <div class="col-md-2 col-sm-4 col-6">
+                                <a href="#" class="quick-action-btn" onclick="gestionarCursos()">
+                                    <i class="fas fa-book d-block"></i>
+                                    <strong>Gestionar<br>Cursos</strong>
+                                </a>
+                            </div>
+                            <div class="col-md-2 col-sm-4 col-6">
+                                <a href="#" class="quick-action-btn" onclick="gestionarPagos()">
+                                    <i class="fas fa-credit-card d-block"></i>
+                                    <strong>Gestionar<br>Pagos</strong>
+                                </a>
+                            </div>
+                            <div class="col-md-2 col-sm-4 col-6">
+                                <a href="#" class="quick-action-btn" onclick="gestionarUsuarios()">
+                                    <i class="fas fa-users d-block"></i>
+                                    <strong>Gestionar<br>Usuarios</strong>
+                                </a>
+                            </div>
+                            <div class="col-md-2 col-sm-4 col-6">
+                                <a href="#" class="quick-action-btn" onclick="gestionarProfesores()">
+                                    <i class="fas fa-chalkboard-teacher d-block"></i>
+                                    <strong>Gestionar<br>Profesores</strong>
+                                </a>
+                            </div>
+                            <div class="col-md-2 col-sm-4 col-6">
+                                <a href="#" class="quick-action-btn" onclick="gestionarEstudiantes()">
+                                    <i class="fas fa-user-graduate d-block"></i>
+                                    <strong>Gestionar<br>Estudiantes</strong>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Dashboard Row -->
+        <div class="row">
+            <!-- Pending Enrollments -->
+            <div class="col-lg-6 mb-4">
+                <div class="card animate__animated animate__fadeInLeft">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="fas fa-clock me-2"></i>Matrículas Pendientes</h5>
+                        <div class="d-flex gap-2">
+                            <span class="badge rounded-pill animate-pulse" style="background: var(--institutional-yellow); color: var(--institutional-red);" id="matriculasPendientesCount">0</span>
+                            <button class="btn btn-sm" style="background: rgba(255, 255, 255, 0.2); color: white;" onclick="refrescarMatriculas()">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div id="matriculasPendientesContainer" style="max-height: 400px; overflow-y: auto;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- System Alerts -->
+            <div class="col-lg-6 mb-4">
+                <div class="card animate__animated animate__fadeInRight">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="fas fa-exclamation-triangle me-2"></i>Alertas del Sistema</h5>
+                        <span class="badge rounded-pill animate-pulse" style="background: var(--danger-color); color: white;" id="alertasCount">0</span>
+                    </div>
+                    <div class="card-body">
+                        <div id="alertasContainer" style="max-height: 400px; overflow-y: auto;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics and Charts -->
+        <div class="row">
+            <!-- Enrollment Chart -->
+            <div class="col-lg-8 mb-4">
+                <div class="card animate__animated animate__fadeInUp">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="fas fa-chart-line me-2"></i>Estadísticas de Matrículas</h5>
+                        <div class="btn-group" role="group">
+                            <button type="button" class="btn btn-sm btn-outline-light active" onclick="cambiarPeriodoGrafico('mes')">Mes</button>
+                            <button type="button" class="btn btn-sm btn-outline-light" onclick="cambiarPeriodoGrafico('año')">Año</button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="matriculasChart" width="400" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Financial Summary -->
+            <div class="col-lg-4 mb-4">
+                <div class="card animate__animated animate__fadeInUp">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-dollar-sign me-2"></i>Resumen Financiero</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3" id="resumenFinancieroContainer"></div>
+                        <div class="mt-4">
+                            <canvas id="ingresosChart" width="300" height="300"></canvas>
+                        </div>
+                        <div class="d-grid gap-2 mt-4">
+                            <button class="btn btn-primary" onclick="verReporteFinanciero()">
+                                <i class="fas fa-file-invoice-dollar me-2"></i>Ver Reporte Completo
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card animate__animated animate__fadeInUp">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="fas fa-history me-2"></i>Actividad Reciente del Sistema</h5>
+                        <button class="btn btn-sm" style="background: rgba(255, 255, 255, 0.2); color: white;" onclick="refrescarActividad()">
+                            <i class="fas fa-sync-alt"></i> Actualizar
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-lg-8">
+                                <div id="actividadRecienteContainer"></div>
+                            </div>
+                            <div class="col-lg-4">
+                                <div class="card" style="background: rgba(255, 215, 0, 0.1); border: 2px solid var(--institutional-yellow);">
+                                    <div class="card-body">
+                                        <h6 style="color: var(--institutional-red);"><i class="fas fa-info-circle me-2"></i>Estadísticas del Día</h6>
+                                        <div id="estadisticasDiaContainer"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Popular Courses and Occupancy -->
+        <div class="row">
+            <div class="col-lg-6 mb-4">
+                <div class="card animate__animated animate__fadeInLeft">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-star me-2"></i>Cursos Más Demandados</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="cursosPopularesContainer"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6 mb-4">
+                <div class="card animate__animated animate__fadeInRight">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-chart-pie me-2"></i>Estado de Ocupación</h5>
+                    </div>
+                    <div class="card-body text-center">
+                        <canvas id="ocupacionChart" width="300" height="300"></canvas>
+                        <div class="mt-3">
+                            <div class="row g-2" id="ocupacionStats"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for Enrollment Management -->
+<div class="modal fade" id="gestionMatriculasModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-file-alt me-2"></i>Gestión de Matrículas</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row mb-3">
+                    <div class="col-md-8">
+                        <div class="btn-group" role="group">
+                            <button class="btn btn-outline-primary active" data-filtro="todas" onclick="filtrarMatriculasModal('todas', event)">Todas</button>
+                            <button class="btn btn-outline-primary" data-filtro="pendientes" onclick="filtrarMatriculasModal('pendientes', event)">Pendientes</button>
+                            <button class="btn btn-outline-primary" data-filtro="aprobadas" onclick="filtrarMatriculasModal('aprobadas', event)">Aprobadas</button>
+                            <button class="btn btn-outline-primary" data-filtro="rechazadas" onclick="filtrarMatriculasModal('rechazadas', event)">Rechazadas</button>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <input type="text" class="form-control" id="buscarMatricula" placeholder="Buscar por estudiante o número..." onkeyup="buscarMatriculas()">
+                    </div>
+                </div>
+                <div id="matriculasModalContainer" style="max-height: 500px; overflow-y: auto;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for Course Management -->
+<div class="modal fade" id="gestionCursosModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-book me-2"></i>Gestión de Cursos</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row mb-3">
+                    <div class="col-md-8">
+                        <button class="btn btn-primary" onclick="abrirFormularioCurso()">Nuevo Curso</button>
+                    </div>
+                    <div class="col-md-4">
+                        <input type="text" class="form-control" id="buscarCurso" placeholder="Buscar curso..." onkeyup="buscarCursos()">
+                    </div>
+                </div>
+                <div id="cursosModalContainer" style="max-height: 500px; overflow-y: auto;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for Course Form -->
+<div class="modal fade" id="formCursoModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="formCursoModalLabel">Nuevo Curso</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="cursoForm" onsubmit="event.preventDefault(); guardarCurso();">
+                    <input type="hidden" id="cursoId">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="cursoNombre" class="form-label">Nombre</label>
+                            <input type="text" id="cursoNombre" class="form-control" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="cursoCodigo" class="form-label">Código</label>
+                            <input type="text" id="cursoCodigo" class="form-control" required>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="cursoNivel" class="form-label">Nivel Académico</label>
+                            <select id="cursoNivel" class="form-select" required>
+                                <option value="INICIAL">Inicial</option>
+                                <option value="PRIMARIA">Primaria</option>
+                                <option value="SECUNDARIA">Secundaria</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="cursoGrado" class="form-label">Grado</label>
+                            <input type="text" id="cursoGrado" class="form-control">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="cursoSeccion" class="form-label">Sección</label>
+                            <input type="text" id="cursoSeccion" class="form-control">
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <label for="cursoCreditos" class="form-label">Créditos</label>
+                            <input type="number" id="cursoCreditos" class="form-control" min="0">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="cursoHorasSemanales" class="form-label">Horas Semanales</label>
+                            <input type="number" id="cursoHorasSemanales" class="form-control" min="0">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="cursoEdadMinima" class="form-label">Edad Mínima</label>
+                            <input type="number" id="cursoEdadMinima" class="form-control" min="0">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="cursoEdadMaxima" class="form-label">Edad Máxima</label>
+                            <input type="number" id="cursoEdadMaxima" class="form-control" min="0">
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="cursoCostoMatricula" class="form-label">Costo de Matrícula (S/)</label>
+                            <input type="number" id="cursoCostoMatricula" class="form-control" step="0.01" min="0">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="cursoCostoMensualidad" class="form-label">Costo Mensualidad (S/)</label>
+                            <input type="number" id="cursoCostoMensualidad" class="form-control" step="0.01" min="0">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="cursoCostoMateriales" class="form-label">Costo de Materiales (S/)</label>
+                            <input type="number" id="cursoCostoMateriales" class="form-control" step="0.01" min="0">
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="cursoModalidad" class="form-label">Modalidad</label>
+                            <select id="cursoModalidad" class="form-select">
+                                <option value="PRESENCIAL">Presencial</option>
+                                <option value="VIRTUAL">Virtual</option>
+                                <option value="HIBRIDA">Híbrida</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="cursoCapacidadMaxima" class="form-label">Capacidad Máxima</label>
+                            <input type="number" id="cursoCapacidadMaxima" class="form-control" min="1">
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="cursoDiasSemana" class="form-label">Días de la Semana</label>
+                            <input type="text" id="cursoDiasSemana" class="form-control" placeholder="Ej: Lunes, Miércoles, Viernes">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="cursoHoraInicio" class="form-label">Hora Inicio</label>
+                            <input type="time" id="cursoHoraInicio" class="form-control">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="cursoHoraFin" class="form-label">Hora Fin</label>
+                            <input type="time" id="cursoHoraFin" class="form-control">
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="cursoAula" class="form-label">Aula</label>
+                            <input type="text" id="cursoAula" class="form-control">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="cursoProfesorId" class="form-label">Profesor</label>
+                            <select id="cursoProfesorId" class="form-select" required>
+                                <option value="">Seleccione un profesor</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="cursoDescripcion" class="form-label">Descripción</label>
+                        <textarea id="cursoDescripcion" class="form-control" rows="4"></textarea>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="cursoFechaInicio" class="form-label">Fecha Inicio</label>
+                            <input type="date" id="cursoFechaInicio" class="form-control">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="cursoFechaFin" class="form-label">Fecha Fin</label>
+                            <input type="date" id="cursoFechaFin" class="form-control">
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="cursoAnioAcademico" class="form-label">Año Académico</label>
+                            <input type="number" id="cursoAnioAcademico" class="form-control" min="2000">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="cursoPeriodo" class="form-label">Periodo</label>
+                            <input type="text" id="cursoPeriodo" class="form-control" placeholder="Ej: I-2025">
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="cursoActivo" class="form-label">Activo</label>
+                            <select id="cursoActivo" class="form-select">
+                                <option value="true">Sí</option>
+                                <option value="false">No</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="cursoPermiteMatricula" class="form-label">Permite Matrícula</label>
+                            <select id="cursoPermiteMatricula" class="form-select">
+                                <option value="true">Sí</option>
+                                <option value="false">No</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div id="cursoInfoSoloLectura" class="border p-2 mb-3 d-none">
+                        <p><strong>Capacidad Actual:</strong> <span id="cursoCapacidadActual">0</span></p>
+                        <p><strong>Creado Por:</strong> <span id="cursoCreatedBy"></span></p>
+                        <p><strong>Creado:</strong> <span id="cursoCreatedAt"></span></p>
+                        <p><strong>Última Actualización:</strong> <span id="cursoUpdatedAt"></span></p>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button class="btn btn-primary" onclick="guardarCurso()">Guardar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for Enrollment Details -->
+<div class="modal fade" id="detalleMatriculaModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-info-circle me-2"></i>Detalles de Matrícula</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="detalleMatriculaContent"></div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-success" onclick="aprobarMatricula()" id="btnAprobar" style="display: none;">
+                    <i class="fas fa-check me-2"></i>Aprobar
+                </button>
+                <button type="button" class="btn btn-danger" onclick="rechazarMatricula()" id="btnRechazar" style="display: none;">
+                    <i class="fas fa-times me-2"></i>Rechazar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast Notification -->
+<div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1060;">
+    <div id="notificationToast" class="toast" role="alert">
+        <div class="toast-header">
+            <i class="fas fa-bell me-2" style="color: var(--institutional-red);"></i>
+            <strong class="me-auto" style="color: var(--institutional-red);">César Vallejo Admin</strong>
+            <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+        </div>
+        <div class="toast-body" id="toastMessage"></div>
+    </div>
+</div>
+
+<!-- Scripts -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+
+<script>
+    const API_BASE_URL = 'http://localhost:8080/api';
+let currentUser = null;
+let dashboardData = null;
+let matriculasData = [];
+let stompClient = null;
+let charts = {};
+let currentMatriculaId = null;
+
+document.addEventListener('DOMContentLoaded', () => {
+    verificarAutenticacion();
+    actualizarHora();
+    setInterval(actualizarHora, 60000);
+});
+
+function verificarAutenticacion() {
+    const token = localStorage.getItem('token');
+    const usuario = localStorage.getItem('usuario');
+
+    if (!token || !usuario) {
+        window.location.href = 'login.html';
+        return;
+    }
+
+    try {
+        currentUser = JSON.parse(usuario);
+
+        if (currentUser.rol !== 'ADMIN') {
+            if (currentUser.rol === 'PADRE') {
+                window.location.href = 'padre-dashboard.html';
+            } else {
+                cerrarSesion();
+            }
+            return;
+        }
+
+        document.getElementById('adminName').textContent = currentUser.nombre;
+        cargarDashboard();
+        conectarWebSocket();
+    } catch (error) {
+        console.error('Error verifying authentication:', error);
+        cerrarSesion();
+    }
+}
+
+function actualizarHora() {
+    const now = new Date();
+    document.getElementById('lastUpdate').textContent = now.toLocaleTimeString('es-PE');
+}
+
+async function cargarDashboard() {
+    try {
+        document.getElementById('loading').style.display = 'block';
+        document.getElementById('dashboardContent').style.display = 'none';
+
+        const response = await fetch(`${API_BASE_URL}/dashboard/admin`, {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (!response.ok) throw new Error('Failed to load dashboard');
+
+        dashboardData = await response.json();
+        await cargarMatriculas();
+        dashboardData.matriculasPendientes = matriculasData.length;
+        mostrarDashboard();
+    } catch (error) {
+        console.error('Error loading dashboard:', error);
+        mostrarError('Error al cargar el dashboard');
+    } finally {
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('dashboardContent').style.display = 'block';
+    }
+}
+
+async function cargarMatriculas() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/matriculas/estado/PENDIENTE?page=0&size=10`, {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            matriculasData = data.content || [];
+        }
+    } catch (error) {
+        console.error('Error loading enrollments:', error);
+        matriculasData = [];
+    }
+}
+
+function mostrarDashboard() {
+    mostrarEstadisticas();
+    mostrarMatriculasPendientes();
+    mostrarAlertas();
+    mostrarActividadReciente();
+    mostrarEstadisticasDia();
+    mostrarCursosPopulares();
+    mostrarResumenFinanciero();
+    crearGraficos();
+}
+
+function mostrarEstadisticas() {
+    const container = document.getElementById('statsContainer');
+    const stats = [
+        { icon: 'fas fa-users', number: dashboardData?.totalEstudiantes || 0, label: 'Estudiantes Activos' },
+        { icon: 'fas fa-file-alt', number: dashboardData?.totalMatriculas || 0, label: 'Total Matrículas' },
+        { icon: 'fas fa-clock', number: dashboardData?.matriculasPendientes || 0, label: 'Matrículas Pendientes' },
+        { icon: 'fas fa-book', number: dashboardData?.cursosActivos || 0, label: 'Cursos Activos' },
+        { icon: 'fas fa-dollar-sign', number: `S/ ${(dashboardData?.ingresosMes || 0).toLocaleString('es-PE')}`, label: 'Ingresos del Mes' },
+        { icon: 'fas fa-exclamation-triangle', number: dashboardData?.pagosVencidos || 0, label: 'Pagos Vencidos' }
+    ];
+
+    container.innerHTML = stats.map(stat => `
+        <div class="col-md-2 col-sm-4 col-6 mb-3">
+            <div class="stat-card">
+                <div class="stat-icon"><i class="${stat.icon}"></i></div>
+                <div class="stat-number">${stat.number}</div>
+                <div class="stat-label">${stat.label}</div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function mostrarMatriculasPendientes() {
+    const container = document.getElementById('matriculasPendientesContainer');
+    const countBadge = document.getElementById('matriculasPendientesCount');
+
+    countBadge.textContent = matriculasData.length;
+
+    if (matriculasData.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-4">
+                <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                <h6 class="text-success">¡No hay matrículas pendientes!</h6>
+                <p class="text-muted mb-0">Todas las solicitudes están procesadas</p>
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = matriculasData.map(matricula => `
+        <div class="matricula-item matricula-${getMatriculaStatusClass(matricula.estado)}" onclick="verDetalleMatricula(${matricula.id})">
+            <div class="d-flex justify-content-between align-items-start">
+                <div class="flex-grow-1">
+                    <h6 class="mb-2" style="color: var(--institutional-red);">${matricula.nombreEstudiante}</h6>
+                    <p class="mb-2" style="color: var(--institutional-red); opacity: 0.8;">
+                        <i class="fas fa-hashtag me-1"></i>${matricula.numeroMatricula}
+                        <span class="ms-2"><i class="fas fa-graduation-cap me-1"></i>${matricula.grado} - ${matricula.seccion || ''}</span>
+                    </p>
+                    <div class="d-flex align-items-center gap-3">
+                        <span class="status-badge badge-${getMatriculaStatusClass(matricula.estado)}">${matricula.estadoDescripcion}</span>
+                        <small style="color: var(--institutional-red); opacity: 0.7;">
+                            <i class="fas fa-calendar me-1"></i>${formatearFecha(matricula.fechaSolicitud)}
+                        </small>
+                        ${matricula.fechaVencimiento ? `
+                            <small style="color: ${new Date(matricula.fechaVencimiento) < new Date() ? 'var(--danger-color)' : 'var(--warning-color)'};">
+                                <i class="fas fa-clock me-1"></i>${getVencimientoTexto(matricula.fechaVencimiento)}
+                            </small>
+                        ` : ''}
+                    </div>
+                </div>
+                <div class="text-end">
+                    ${matricula.montoFinal ? `<div class="fw-bold" style="color: var(--institutional-red);">S/ ${matricula.montoFinal.toFixed(2)}</div>` : ''}
+                    <div class="mt-2">
+                        <div class="progress" style="width: 80px; height: 8px;">
+                            <div class="progress-bar" style="width: ${matricula.porcentajeCompletitud}%; background: linear-gradient(90deg, var(--institutional-yellow), var(--institutional-gold));"></div>
+                        </div>
+                        <small class="text-muted">${Math.round(matricula.porcentajeCompletitud)}% completo</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function mostrarAlertas() {
+    const container = document.getElementById('alertasContainer');
+    const countBadge = document.getElementById('alertasCount');
+    const alertDropdown = document.getElementById('alertDropdown');
+    const noAlerts = document.getElementById('noAlerts');
+    const alertas = dashboardData?.alertas || [];
+
+    countBadge.textContent = alertas.length;
+
+    if (alertas.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-4">
+                <i class="fas fa-shield-alt fa-3x text-success mb-3"></i>
+                <h6 class="text-success">Sistema funcionando correctamente</h6>
+                <p class="text-muted mb-0">No hay alertas activas</p>
+            </div>
+        `;
+        noAlerts.style.display = 'block';
+        return;
+    }
+
+    noAlerts.style.display = 'none';
+
+    container.innerHTML = alertas.map(alerta => `
+        <div class="alert-item alert-${alerta.nivel.toLowerCase()}">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <h6 class="mb-2" style="color: var(--institutional-red);">
+                        <i class="fas fa-${getAlertIcon(alerta.nivel)} me-2"></i>${alerta.tipo}
+                    </h6>
+                    <p class="mb-2">${alerta.mensaje}</p>
+                    ${alerta.cantidad ? `<small class="text-muted">Cantidad: ${alerta.cantidad}</small>` : ''}
+                </div>
+                <div>
+                    ${alerta.accion ? `<button class="btn btn-sm btn-outline-primary" onclick="ejecutarAccionAlerta('${alerta.accion}')">${alerta.accion}</button>` : ''}
+                </div>
+            </div>
+        </div>
+    `).join('');
+
+    alertDropdown.innerHTML = `
+        <li><h6 class="dropdown-header">Alertas del Sistema</h6></li>
+        <li><hr class="dropdown-divider"></li>
+        ${alertas.map(alerta => `
+            <li><a class="dropdown-item" href="#"><i class="fas fa-${getAlertIcon(alerta.nivel)} me-2"></i>${alerta.mensaje}</a></li>
+        `).join('')}
+    `;
+}
+
+function mostrarActividadReciente() {
+    const container = document.getElementById('actividadRecienteContainer');
+    const actividades = [
+        { icon: 'fas fa-user-plus', color: 'var(--success-color)', titulo: 'Nuevo estudiante registrado', descripcion: 'María González registró a su hijo Carlos Pérez', fecha: 'Hace 15 minutos' },
+        { icon: 'fas fa-check-circle', color: 'var(--institutional-yellow)', titulo: 'Matrícula aprobada', descripcion: 'Matrícula MAT-2024-000125 aprobada por Admin', fecha: 'Hace 30 minutos' },
+        { icon: 'fas fa-credit-card', color: 'var(--info-color)', titulo: 'Pago procesado', descripcion: 'Pago de S/ 450.00 procesado exitosamente', fecha: 'Hace 1 hora' },
+        { icon: 'fas fa-book', color: 'var(--institutional-red)', titulo: 'Curso actualizado', descripcion: 'Horarios de Matemática 6to A modificados', fecha: 'Hace 2 horas' },
+        { icon: 'fas fa-bell', color: 'var(--warning-color)', titulo: 'Recordatorio automático', descripcion: 'Enviados 15 recordatorios de pago vencido', fecha: 'Hace 3 horas' }
+    ];
+
+    container.innerHTML = actividades.map(actividad => `
+        <div class="d-flex align-items-center mb-4 pb-3 border-bottom">
+            <div class="me-4" style="width: 50px; height: 50px; border-radius: 50%; background: ${actividad.color}; display: flex; align-items: center; justify-content: center;">
+                <i class="${actividad.icon} text-white"></i>
+            </div>
+            <div class="flex-grow-1">
+                <h6 class="mb-1" style="color: var(--institutional-red);">${actividad.titulo}</h6>
+                <p class="mb-0" style="color: var(--institutional-red); opacity: 0.8;">${actividad.descripcion}</p>
+            </div>
+            <div style="color: var(--institutional-red); opacity: 0.6;">
+                <small>${actividad.fecha}</small>
+            </div>
+        </div>
+    `).join('');
+}
+
+function mostrarEstadisticasDia() {
+    const container = document.getElementById('estadisticasDiaContainer');
+    const estadisticas = [
+        { label: 'Nuevas matrículas', valor: '8', icon: 'fas fa-file-plus' },
+        { label: 'Pagos recibidos', valor: 'S/ 2,450', icon: 'fas fa-coins' },
+        { label: 'Estudiantes activos', valor: '1,247', icon: 'fas fa-user-graduate' },
+        { label: 'Alertas resueltas', valor: '3', icon: 'fas fa-check' }
+    ];
+
+    container.innerHTML = estadisticas.map(stat => `
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div class="d-flex align-items-center">
+                <i class="${stat.icon} me-2" style="color: var(--institutional-red);"></i>
+                <span style="color: var(--institutional-red); font-size: 0.9rem;">${stat.label}</span>
+            </div>
+            <strong style="color: var(--institutional-red);">${stat.valor}</strong>
+        </div>
+    `).join('');
+}
+
+function mostrarCursosPopulares() {
+    const container = document.getElementById('cursosPopularesContainer');
+    const cursos = [
+        { nombre: 'Matemática 6to A', ocupacion: 95, total: 30, disponible: 2 },
+        { nombre: 'Comunicación 1ro B', ocupacion: 87, total: 30, disponible: 4 },
+        { nombre: 'Ciencias 5to A', ocupacion: 83, total: 25, disponible: 4 },
+        { nombre: 'Inglés 2do C', ocupacion: 77, total: 28, disponible: 7 }
+    ];
+
+    container.innerHTML = cursos.map(curso => `
+        <div class="d-flex justify-content-between align-items-center mb-3 p-3" style="background: rgba(255, 215, 0, 0.1); border-radius: 10px; border-left: 4px solid var(--institutional-yellow);">
+            <div>
+                <h6 class="mb-1" style="color: var(--institutional-red);">${curso.nombre}</h6>
+                <small class="text-muted">${curso.disponible} cupos disponibles</small>
+            </div>
+            <div class="text-end">
+                <div class="fw-bold" style="color: var(--institutional-red);">${curso.ocupacion}%</div>
+                <div class="progress mt-1" style="width: 80px; height: 6px;">
+                    <div class="progress-bar" style="width: ${curso.ocupacion}%; background: linear-gradient(90deg, var(--institutional-red), var(--institutional-yellow));"></div>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function mostrarResumenFinanciero() {
+    const container = document.getElementById('resumenFinancieroContainer');
+    const ingresos = dashboardData?.ingresosMes || 0;
+    const pagosVencidos = dashboardData?.pagosVencidos || 0;
+    const deudaEstimada = matriculasData.reduce((total, m) => {
+        return total + (m.montoFinal || 0);
+    }, 0);
+
+    try {
+        container.innerHTML = `
+            <div class="col-6 mb-3">
+                <div class="text-center p-3" style="background: linear-gradient(135deg, var(--institutional-light-yellow), rgba(255, 215, 0, 0.1)); border-radius: 15px;">
+                    <div class="fs-5 fw-bold" style="color: var(--institutional-red);">S/ ${ingresos.toLocaleString('es-PE')}</div>
+                    <div class="small" style="color: var(--institutional-red); opacity: 0.8;">Ingresos del Mes</div>
+                </div>
+            </div>
+            <div class="col-3 mb-3">
+                <div class="text-center p-2" style="background: rgba(220, 20, 60, 0.1); border-radius: 10px;">
+                    <div class="fw-bold" style="color: var(--institutional-red);">S/ ${deudaEstimada.toLocaleString('es-PE')}</div>
+                    <div class="small text-muted">Pendiente</div>
+                </div>
+            </div>
+            <div class="col-3 mb-3">
+                <div class="text-center p-2" style="background: rgba(255, 193, 7, 0.1); border-radius: 10px;">
+                    <div class="fw-bold" style="color: var(--warning-color);">${pagosVencidos}</div>
+                    <div class="small text-muted">Vencidos</div>
+                </div>
+            </div>
+        `;
+    } catch (error) {
+        console.error('Error mostrando resumen financiero:', error);
+        container.innerHTML = `
+            <div class="col-12">
+                <div class="alert alert-warning" role="alert">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    No se pudo cargar el resumen financiero completo
+                </div>
+            </div>
+        `;
+    }
+}
+
+function crearGraficos() {
+    const matriculasCtx = document.getElementById('matriculasChart');
+    if (matriculasCtx) {
+        charts.matriculas = new Chart(matriculasCtx, {
+            type: 'line',
+            data: {
+                labels: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun'],
+                datasets: [{
+                    label: 'Matrículas',
+                    data: [45, 65, 80, 120, 95, 150],
+                    borderColor: 'rgb(220, 20, 60)',
+                    backgroundColor: 'rgba(220, 20, 60, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: { y: { beginAtZero: true } }
+            }
+        });
+    }
+
+    const ingresosCtx = document.getElementById('ingresosChart');
+    if (ingresosCtx) {
+        charts.ingresos = new Chart(ingresosCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Matrículas', 'Mensualidades', 'Materiales', 'Otros'],
+                datasets: [{
+                    data: [30, 50, 15, 5],
+                    backgroundColor: ['rgb(220, 20, 60)', 'rgb(255, 215, 0)', 'rgb(218, 165, 32)', 'rgb(183, 28, 28)']
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'bottom' } }
+            }
+        });
+    }
+
+    const ocupacionCtx = document.getElementById('ocupacionChart');
+    if (ocupacionCtx) {
+        charts.ocupacion = new Chart(ocupacionCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Ocupado', 'Disponible'],
+                datasets: [{
+                    data: [75, 25],
+                    backgroundColor: ['rgb(220, 20, 60)', 'rgb(255, 215, 0)']
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } }
+            }
+        });
+
+        document.getElementById('ocupacionStats').innerHTML = `
+            <div class="col-6">
+                <div class="text-center">
+                    <div class="fw-bold" style="color: var(--institutional-red);">75%</div>
+                    <div class="small text-muted">Ocupado</div>
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="text-center">
+                    <div class="fw-bold" style="color: var(--institutional-yellow);">25%</div>
+                    <div class="small text-muted">Disponible</div>
+                </div>
+            </div>
+        `;
+    }
+}
+
+
+function gestionarMatriculas() {
+    cargarMatriculasCompletas();
+    const modal = new bootstrap.Modal(document.getElementById('gestionMatriculasModal'));
+    modal.show();
+}
+
+async function cargarMatriculasCompletas(filtro = 'todas', busqueda = '') {
+    try {
+        let url;
+        if (filtro === 'todas') {
+            url = `${API_BASE_URL}/matriculas?page=0&size=50`;
+        } else {
+            url = `${API_BASE_URL}/matriculas/estado/${filtro}?page=0&size=50`;
+        }
+
+        const response = await fetch(url, {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            mostrarMatriculasModal(data.content || []);
+        } else {
+            mostrarError('Error al cargar las matrículas');
+        }
+    } catch (error) {
+        console.error('Error loading enrollments:', error);
+        mostrarError('Error al cargar las matrículas');
+    }
+}
+
+function mostrarMatriculasModal(matriculas) {
+    const container = document.getElementById('matriculasModalContainer');
+
+    if (matriculas.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-5">
+                <i class="fas fa-inbox fa-4x text-muted mb-3"></i>
+                <h5 class="text-muted">No se encontraron matrículas</h5>
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = matriculas.map(matricula => `
+        <div class="matricula-item matricula-${getMatriculaStatusClass(matricula.estado)}" onclick="verDetalleMatricula(${matricula.id})">
+            <div class="d-flex justify-content-between align-items-start">
+                <div class="flex-grow-1">
+                    <h6 class="mb-2" style="color: var(--institutional-red);">${matricula.nombreEstudiante}</h6>
+                    <p class="mb-2" style="color: var(--institutional-red); opacity: 0.8;">
+                        <i class="fas fa-hashtag me-1"></i>${matricula.numeroMatricula}
+                        <span class="ms-2"><i class="fas fa-graduation-cap me-1"></i>${matricula.grado} - ${matricula.seccion || ''}</span>
+                    </p>
+                    <div class="d-flex align-items-center gap-3">
+                        <span class="status-badge badge-${getMatriculaStatusClass(matricula.estado)}">${matricula.estadoDescripcion}</span>
+                        <small style="color: var(--institutional-red); opacity: 0.7;">
+                            <i class="fas fa-calendar me-1"></i>${formatearFecha(matricula.fechaSolicitud)}
+                        </small>
+                    </div>
+                </div>
+                <div class="text-end">
+                    ${matricula.montoFinal ? `<div class="fw-bold" style="color: var(--institutional-red);">S/ ${matricula.montoFinal.toFixed(2)}</div>` : ''}
+                    <div class="mt-2">
+                        <div class="progress" style="width: 80px; height: 8px;">
+                            <div class="progress-bar" style="width: ${matricula.porcentajeCompletitud}%; background: linear-gradient(90deg, var(--institutional-yellow), var(--institutional-gold));"></div>
+                        </div>
+                        <small class="text-muted">${Math.round(matricula.porcentajeCompletitud)}% completo</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function filtrarMatriculasModal(filtro, event) {
+    const buttons = document.querySelectorAll('#gestionMatriculasModal .btn-group .btn');
+    buttons.forEach(btn => btn.classList.remove('active'));
+    event.target.classList.add('active');
+    cargarMatriculasCompletas(filtro);
+}
+
+function buscarMatriculas() {
+    const busqueda = document.getElementById('buscarMatricula').value.trim();
+
+    if (!busqueda) {
+        cargarMatriculasCompletas('todas');
+        return;
+    }
+
+    const url = `${API_BASE_URL}/matriculas/buscar?busqueda=${encodeURIComponent(busqueda)}&page=0&size=50`;
+
+    fetch(url, {
+        headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => mostrarMatriculasModal(data.content || []))
+    .catch(err => {
+        console.error("Error buscando matrículas", err);
+        mostrarError("Error al buscar las matrículas");
+    });
+}
+
+async function verDetalleMatricula(matriculaId) {
+    try {
+        currentMatriculaId = matriculaId;
+        const response = await fetch(`${API_BASE_URL}/matriculas/${matriculaId}`, {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (response.ok) {
+            const matricula = await response.json();
+            const container = document.getElementById('detalleMatriculaContent');
+
+            container.innerHTML = `
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="mb-3" style="color: var(--institutional-red);"><i class="fas fa-user-graduate me-2"></i>Información del Estudiante</h6>
+                        <p><strong>Nombre:</strong> ${matricula.nombreEstudiante}</p>
+                        <p><strong>Número de Matrícula:</strong> ${matricula.numeroMatricula}</p>
+                        <p><strong>Grado:</strong> ${matricula.grado}</p>
+                        <p><strong>Sección:</strong> ${matricula.seccion || 'N/A'}</p>
+                        <p><strong>Estado:</strong> <span class="status-badge badge-${getMatriculaStatusClass(matricula.estado)}">${matricula.estadoDescripcion}</span></p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="mb-3" style="color: var(--institutional-red);"><i class="fas fa-file-invoice me-2"></i>Detalles de la Matrícula</h6>
+                        <p><strong>Fecha de Solicitud:</strong> ${formatearFecha(matricula.fechaSolicitud)}</p>
+                        ${matricula.fechaVencimiento ? `<p><strong>Vencimiento:</strong> ${formatearFecha(matricula.fechaVencimiento)}</p>` : ''}
+                        <p><strong>Monto Total:</strong> S/ ${matricula.montoFinal ? matricula.montoFinal.toFixed(2) : '0.00'}</p>
+                        <p><strong>Porcentaje Completitud:</strong> ${Math.round(matricula.porcentajeCompletitud)}%</p>
+                        ${matricula.comentarios ? `<p><strong>Comentarios:</strong> ${matricula.comentarios}</p>` : ''}
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('btnAprobar').style.display = matricula.estado === 'PENDIENTE' ? 'inline-block' : 'none';
+            document.getElementById('btnRechazar').style.display = matricula.estado === 'PENDIENTE' ? 'inline-block' : 'none';
+
+            const modal = new bootstrap.Modal(document.getElementById('detalleMatriculaModal'));
+            modal.show();
+        } else {
+            mostrarError('Error al cargar los detalles de la matrícula');
+        }
+    } catch (error) {
+        console.error('Error loading enrollment details:', error);
+        mostrarError('Error al cargar los detalles de la matrícula');
+    }
+}
+
+async function aprobarMatricula() {
+    if (!currentMatriculaId) return;
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/matriculas/${currentMatriculaId}/aprobar`, {
+            method: 'PATCH',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (response.ok) {
+            mostrarExito('Matrícula aprobada correctamente');
+            bootstrap.Modal.getInstance(document.getElementById('detalleMatriculaModal')).hide();
+            await cargarMatriculas();
+            mostrarMatriculasPendientes();
+            cargarMatriculasCompletas();
+        } else {
+            mostrarError('Error al aprobar la matrícula');
+        }
+    } catch (error) {
+        console.error('Error approving enrollment:', error);
+        mostrarError('Error al aprobar la matrícula');
+    }
+}
+
+async function rechazarMatricula() {
+    if (!currentMatriculaId) return;
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/matriculas/${currentMatriculaId}/rechazar?motivo=Rechazado%20por%20admin`, {
+            method: 'PATCH',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (response.ok) {
+            mostrarExito('Matrícula rechazada correctamente');
+            bootstrap.Modal.getInstance(document.getElementById('detalleMatriculaModal')).hide();
+            await cargarMatriculas();
+            mostrarMatriculasPendientes();
+            cargarMatriculasCompletas();
+        } else {
+            mostrarError('Error al rechazar la matrícula');
+        }
+    } catch (error) {
+        console.error('Error rejecting enrollment:', error);
+        mostrarError('Error al rechazar la matrícula');
+    }
+}
+
+async function refrescarMatriculas() {
+    await cargarMatriculas();
+    mostrarMatriculasPendientes();
+}
+
+async function gestionarCursos() {
+    await cargarCursosCompletos();
+    await cargarProfesores();
+    const modal = new bootstrap.Modal(document.getElementById('gestionCursosModal'));
+    modal.show();
+}
+
+function verificarYLimpiarToken() {
+    const token = localStorage.getItem('token');
+
+    const keysToCheck = ['authToken', 'user_token', 'access_token', 'jwt_token'];
+    keysToCheck.forEach(key => {
+        if (localStorage.getItem(key)) {
+            console.warn(`⚠️ Token duplicado encontrado: ${key}. Eliminando...`);
+            localStorage.removeItem(key);
+        }
+    });
+
+    if (!token) {
+        console.error('❌ No hay token');
+        cerrarSesion();
+        return false;
+    }
+
+    try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        console.log('🔐 Token Info:', {
+            usuario: payload.sub,
+            rol: payload.rol,
+            expira: new Date(payload.exp * 1000).toLocaleString()
+        });
+
+        if (payload.exp * 1000 < Date.now()) {
+            console.error('❌ Token expirado');
+            mostrarError('Tu sesión ha expirado. Por favor, inicia sesión nuevamente.');
+            cerrarSesion();
+            return false;
+        }
+
+        if (!payload.rol || (!payload.rol.includes('ADMIN'))) {
+            console.error('❌ Rol insuficiente:', payload.rol);
+            mostrarError('No tienes permisos para acceder a esta sección.');
+            cerrarSesion();
+            return false;
+        }
+
+        sessionStorage.setItem('currentUser', payload.sub);
+        return true;
+    } catch (error) {
+        console.error('❌ Error al verificar token:', error);
+        cerrarSesion();
+        return false;
+    }
+}
+
+async function cargarCursosCompletos() {
+    if (!verificarYLimpiarToken()) {
+        return;
+    }
+
+    try {
+        const token = localStorage.getItem('token');
+        const currentUser = sessionStorage.getItem('currentUser');
+        console.log('📡 Cargando cursos...');
+        console.log('👤 Usuario actual:', currentUser);
+        console.log('🔑 Token (primeros 50 chars):', token.substring(0, 50) + '...');
+
+        const response = await fetch(`${API_BASE_URL}/cursos`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            credentials: 'include'
+        });
+
+        console.log('📥 Respuesta del servidor:', {
+            status: response.status,
+            statusText: response.statusText,
+            ok: response.ok,
+            headers: {
+                contentType: response.headers.get('content-type'),
+                authorization: response.headers.get('www-authenticate')
+            }
+        });
+
+        if (response.status === 403) {
+            console.error('❌ Error 403: Acceso denegado');
+
+            try {
+                const errorData = await response.json();
+                console.error('📋 Detalles del error:', errorData);
+
+                if (errorData.message && errorData.message.includes('Access is denied')) {
+                    mostrarError('⚠️ PROBLEMA DE PERMISOS EN EL BACKEND\n\n' +
+                        'Tu token es válido pero el servidor rechaza la petición.\n' +
+                        'Posibles causas:\n' +
+                        '1. El endpoint /api/cursos requiere un rol diferente\n' +
+                        '2. Hay una configuración de Spring Security incorrecta\n' +
+                        '3. El backend no reconoce el rol ROLE_ADMIN\n\n' +
+                        'Contacta al administrador del sistema.');
+                } else {
+                    mostrarError('No tienes permisos para ver los cursos. Contacta al administrador.');
+                }
+            } catch (e) {
+                console.error('No se pudo obtener detalles del error');
+                mostrarError('Acceso denegado. Verifica tus permisos con el administrador.');
+            }
+            return;
+        }
+
+        if (response.status === 401) {
+            console.error('❌ Error 401: No autorizado');
+            mostrarError('Tu sesión ha expirado. Por favor, inicia sesión nuevamente.');
+            cerrarSesion();
+            return;
+        }
+
+        if (!response.ok) {
+            throw new Error(`Error ${response.status}: ${response.statusText}`);
+        }
+
+        const cursos = await response.json();
+        console.log('✅ Cursos recibidos:', cursos.length, 'cursos');
+
+        if (cursos.length > 0) {
+            console.log('🔍 Estructura del primer curso:', cursos[0]);
+        }
+
+        mostrarCursosModal(cursos);
+    } catch (error) {
+        console.error('❌ Error loading courses:', error);
+        mostrarError('Error al cargar los cursos: ' + error.message);
+    }
+}
+
+function mostrarCursosModal(cursos) {
+    const container = document.getElementById('cursosModalContainer');
+    if (!container) {
+        console.error('❌ Container cursosModalContainer no encontrado');
+        return;
+    }
+
+    if (!Array.isArray(cursos) || cursos.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-5">
+                <i class="fas fa-inbox fa-4x text-muted mb-3"></i>
+                <h5 class="text-muted">No se encontraron cursos</h5>
+                <p class="text-muted">Agrega cursos desde el botón "Nuevo Curso"</p>
+            </div>
+        `;
+        return;
+    }
+
+    function obtenerValorSeguro(valor, valorPorDefecto = 'N/A') {
+        if (valor === null || valor === undefined || valor === '') {
+            return valorPorDefecto;
+        }
+        return valor;
+    }
+
+    function obtenerNumeroSeguro(valor, valorPorDefecto = 0) {
+        const numero = parseFloat(valor);
+        return isNaN(numero) ? valorPorDefecto : numero;
+    }
+
+    container.innerHTML = cursos.map(curso => {
+        const nombre = obtenerValorSeguro(curso.nombre, 'Sin nombre');
+        const codigo = obtenerValorSeguro(curso.codigo);
+        const nivelAcademico = obtenerValorSeguro(curso.nivelAcademico || curso.nivel_academico);
+        const grado = obtenerValorSeguro(curso.grado);
+        const seccion = obtenerValorSeguro(curso.seccion);
+        const profesorNombre = obtenerValorSeguro(curso.nombreProfesor || curso.nombre_profesor, 'Sin asignar');
+        const capacidadActual = obtenerNumeroSeguro(curso.capacidadActual || curso.capacidad_actual);
+        const capacidadMaxima = obtenerNumeroSeguro(curso.capacidadMaxima || curso.capacidad_maxima);
+        const diasSemana = obtenerValorSeguro(curso.diasSemana || curso.dias_semana);
+        const horaInicio = obtenerValorSeguro(curso.horaInicio || curso.hora_inicio);
+        const horaFin = obtenerValorSeguro(curso.horaFin || curso.hora_fin);
+        const costoMatricula = obtenerNumeroSeguro(curso.costoMatricula || curso.costo_matricula);
+        const costoMensualidad = obtenerNumeroSeguro(curso.costoMensualidad || curso.costo_mensualidad);
+        const costoMateriales = obtenerNumeroSeguro(curso.costoMateriales || curso.costo_materiales);
+        const aula = obtenerValorSeguro(curso.aula);
+        const modalidad = obtenerValorSeguro(curso.modalidad, 'PRESENCIAL');
+        const creditos = obtenerNumeroSeguro(curso.creditos);
+        const descripcion = obtenerValorSeguro(curso.descripcion, '');
+        const activo = curso.activo === true || curso.activo === 'true';
+        const porcentajeOcupacion = capacidadMaxima > 0 ? (capacidadActual / capacidadMaxima) * 100 : 0;
+        const fechaInicio = curso.fechaInicio || curso.fecha_inicio;
+        const fechaFin = curso.fechaFin || curso.fecha_fin;
+
+        return `
+            <div class="curso-item border rounded p-3 mb-3 shadow-sm" id="curso-${curso.id}">
+                <div class="row">
+                    <div class="col-md-9">
+                        <div class="mb-2">
+                            <h5 class="mb-1 text-primary">${nombre}</h5>
+                            <span class="badge bg-secondary me-2">Código: ${codigo}</span>
+                            <span class="badge ${activo ? 'bg-success' : 'bg-danger'}">${activo ? 'Activo' : 'Inactivo'}</span>
+                        </div>
+
+                        <div class="row mb-2">
+                            <div class="col-md-6">
+                                <small class="text-muted d-block">📚 <strong>Académico:</strong></small>
+                                <div class="ms-3">
+                                    <small>• Nivel: ${nivelAcademico}</small><br>
+                                    <small>• Grado: ${grado}</small><br>
+                                    <small>• Sección: ${seccion}</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <small class="text-muted d-block">👨‍🏫 <strong>Profesor:</strong></small>
+                                <div class="ms-3">
+                                    <small>${profesorNombre}</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-2">
+                            <div class="col-md-6">
+                                <small class="text-muted d-block">📊 <strong>Capacidad:</strong></small>
+                                <div class="ms-3">
+                                    <small>
+                                        ${capacidadActual}/${capacidadMaxima > 0 ? capacidadMaxima : 'N/A'} estudiantes
+                                        ${capacidadMaxima > 0 ? `
+                                            <div class="progress mt-1" style="height: 8px;">
+                                                <div class="progress-bar ${porcentajeOcupacion > 80 ? 'bg-warning' : 'bg-primary'}"
+                                                     style="width: ${porcentajeOcupacion}%">
+                                                </div>
+                                            </div>
+                                        ` : ''}
+                                    </small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <small class="text-muted d-block">⏰ <strong>Horario:</strong></small>
+                                <div class="ms-3">
+                                    <small>
+                                        ${diasSemana}<br>
+                                        ${horaInicio !== 'N/A' && horaFin !== 'N/A' ? `${horaInicio} - ${horaFin}` : 'Horario no definido'}
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-2">
+                            <div class="col-md-6">
+                                <small class="text-muted d-block">💰 <strong>Costos:</strong></small>
+                                <div class="ms-3">
+                                    <small>
+                                        • Matrícula: S/ ${costoMatricula.toFixed(2)}<br>
+                                        • Mensualidad: S/ ${costoMensualidad.toFixed(2)}<br>
+                                        • Materiales: S/ ${costoMateriales.toFixed(2)}
+                                    </small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <small class="text-muted d-block">📝 <strong>Detalles:</strong></small>
+                                <div class="ms-3">
+                                    <small>
+                                        • Aula: ${aula}<br>
+                                        • Modalidad: ${modalidad}<br>
+                                        • Créditos: ${creditos}
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+
+                        ${fechaInicio || fechaFin ? `
+                            <div class="mb-2">
+                                <small class="text-muted d-block">📅 <strong>Período:</strong></small>
+                                <div class="ms-3">
+                                    <small>
+                                        ${fechaInicio ? `Inicio: ${new Date(fechaInicio).toLocaleDateString('es-ES')}` : ''}
+                                        ${fechaInicio && fechaFin ? ' | ' : ''}
+                                        ${fechaFin ? `Fin: ${new Date(fechaFin).toLocaleDateString('es-ES')}` : ''}
+                                    </small>
+                                </div>
+                            </div>
+                        ` : ''}
+
+                        ${descripcion && descripcion !== 'N/A' ? `
+                            <div class="mb-2">
+                                <small class="text-muted d-block">📄 <strong>Descripción:</strong></small>
+                                <div class="ms-3">
+                                    <small class="text-muted">${descripcion}</small>
+                                </div>
+                            </div>
+                        ` : ''}
+                    </div>
+
+                    <div class="col-md-3 text-end d-flex flex-column justify-content-center">
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-sm btn-outline-primary" onclick="editarCurso(${curso.id})" title="Editar curso">
+                                <i class="fas fa-edit me-1"></i> Editar
+                            </button>
+                            <button class="btn btn-sm btn-outline-info" onclick="verDetallesCurso(${curso.id})" title="Ver detalles">
+                                <i class="fas fa-eye me-1"></i> Ver
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="eliminarCurso(${curso.id})" title="Eliminar curso">
+                                <i class="fas fa-trash me-1"></i> Eliminar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function abrirFormularioCurso() {
+    document.getElementById('cursoForm').reset();
+    document.getElementById('cursoId').value = '';
+    document.getElementById('formCursoModalLabel').textContent = 'Nuevo Curso';
+    const modal = new bootstrap.Modal(document.getElementById('formCursoModal'));
+    modal.show();
+    cargarProfesores();
+}
+
+function buscarCursos() {
+    const searchTerm = document.getElementById('buscarCurso').value.toLowerCase();
+    const cursos = document.querySelectorAll('#cursosModalContainer .curso-item');
+    cursos.forEach(curso => {
+        const text = curso.textContent.toLowerCase();
+        curso.style.display = text.includes(searchTerm) ? 'block' : 'none';
+    });
+}
+
+async function cargarProfesores() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/profesores`, {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (!response.ok) throw new Error('Error al cargar los profesores');
+
+        const profesores = await response.json();
+        const profesoresActivos = profesores.filter(prof => prof.activo === true);
+
+        const select = document.getElementById('cursoProfesorId');
+        select.innerHTML = '<option value="">Seleccione un profesor</option>' +
+            profesoresActivos.map(prof =>
+                `<option value="${prof.id}">${prof.nombre} ${prof.apellido}</option>`
+            ).join('');
+    } catch (error) {
+        console.error('Error loading professors:', error);
+        mostrarError('Error al cargar los profesores');
+    }
+}
+
+async function guardarCurso() {
+    function obtenerElementoSeguro(id) {
+        const elemento = document.getElementById(id);
+        if (!elemento) {
+            console.warn(`Elemento con ID '${id}' no encontrado`);
+            return null;
+        }
+        return elemento;
+    }
+
+    function obtenerValor(id, valorPorDefecto = '') {
+        const elemento = obtenerElementoSeguro(id);
+        return elemento ? elemento.value : valorPorDefecto;
+    }
+
+    const cursoIdElement = obtenerElementoSeguro('cursoId');
+    const profesorIdElement = obtenerElementoSeguro('cursoProfesorId');
+
+    if (!profesorIdElement) {
+        mostrarError('Error: No se encontró el campo de profesor');
+        return;
+    }
+
+    const cursoId = cursoIdElement ? cursoIdElement.value : '';
+    const profesorId = profesorIdElement.value;
+
+    if (!profesorId) {
+        mostrarError('Por favor, seleccione un profesor');
+        return;
+    }
+
+    const cursoData = {
+        codigo: obtenerValor('cursoCodigo'),
+        nombre: obtenerValor('cursoNombre'),
+        descripcion: obtenerValor('cursoDescripcion') || null,
+        nivelAcademico: obtenerValor('cursoNivel'),
+        grado: obtenerValor('cursoGrado') || null,
+        seccion: obtenerValor('cursoSeccion') || null,
+        creditos: parseInt(obtenerValor('cursoCreditos', '0')) || 0,
+        horasSemanales: parseInt(obtenerValor('cursoHorasSemanales', '0')) || 0,
+        modalidad: obtenerValor('cursoModalidad', 'PRESENCIAL'),
+        capacidadMaxima: parseInt(obtenerValor('cursoCapacidadMaxima', '0')) || 0,
+        capacidadActual: (() => {
+            const elemento = obtenerElementoSeguro('cursoCapacidadActual');
+            return elemento ? parseInt(elemento.textContent || '0') || 0 : 0;
+        })(),
+        edadMinima: parseInt(obtenerValor('cursoEdadMinima')) || null,
+        edadMaxima: parseInt(obtenerValor('cursoEdadMaxima')) || null,
+        diasSemana: obtenerValor('cursoDiasSemana') || null,
+        horaInicio: obtenerValor('cursoHoraInicio') || null,
+        horaFin: obtenerValor('cursoHoraFin') || null,
+        aula: obtenerValor('cursoAula') || null,
+        costoMatricula: parseFloat(obtenerValor('cursoCostoMatricula', '0')) || 0,
+        costoMensualidad: parseFloat(obtenerValor('cursoCostoMensualidad', '0')) || 0,
+        costoMateriales: parseFloat(obtenerValor('cursoCostoMateriales', '0')) || 0,
+        anioAcademico: parseInt(obtenerValor('cursoAnioAcademico', new Date().getFullYear().toString())) || new Date().getFullYear(),
+        periodo: obtenerValor('cursoPeriodo') || null,
+        fechaInicio: obtenerValor('cursoFechaInicio') || null,
+        fechaFin: obtenerValor('cursoFechaFin') || null,
+        activo: obtenerValor('cursoActivo') === 'true',
+        permiteMatricula: obtenerValor('cursoPermiteMatricula') === 'true',
+        createdBy: localStorage.getItem('usuario') || 'admin',
+        profesorId: parseInt(profesorId)
+    };
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/cursos${cursoId ? `/${cursoId}` : ''}`, {
+            method: cursoId ? 'PUT' : 'POST',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(cursoData)
+        });
+
+        if (response.ok) {
+            mostrarExito(cursoId ? 'Curso actualizado correctamente' : 'Curso creado correctamente');
+            bootstrap.Modal.getInstance(document.getElementById('formCursoModal')).hide();
+            await cargarCursosCompletos();
+        } else {
+            const errorData = await response.json();
+            mostrarError(`Error al guardar el curso: ${errorData.message || 'Inténtalo de nuevo'}`);
+        }
+    } catch (error) {
+        console.error('Error saving course:', error);
+        mostrarError('Error al guardar el curso');
+    }
+}
+
+async function editarCurso(cursoId) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/cursos/${cursoId}`, {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (!response.ok) {
+            mostrarError('Error al cargar el curso para edición');
+            return;
+        }
+
+        const curso = await response.json();
+
+        function setearValorSeguro(elementId, valor, valorPorDefecto = '') {
+            const elemento = document.getElementById(elementId);
+            if (elemento) {
+                if (valor !== undefined && valor !== null) {
+                    elemento.value = valor;
+                } else if (valorPorDefecto !== undefined) {
+                    elemento.value = valorPorDefecto;
+                }
+            }
+        }
+
+        setearValorSeguro('cursoId', curso.id);
+        setearValorSeguro('cursoCodigo', curso.codigo);
+        setearValorSeguro('cursoNombre', curso.nombre);
+        setearValorSeguro('cursoDescripcion', curso.descripcion);
+        setearValorSeguro('cursoNivel', curso.nivelAcademico);
+        setearValorSeguro('cursoGrado', curso.grado);
+        setearValorSeguro('cursoSeccion', curso.seccion);
+        setearValorSeguro('cursoCreditos', curso.creditos, '0');
+        setearValorSeguro('cursoHorasSemanales', curso.horasSemanales, '0');
+        setearValorSeguro('cursoModalidad', curso.modalidad, 'PRESENCIAL');
+        setearValorSeguro('cursoCapacidadMaxima', curso.capacidadMaxima, '0');
+        setearValorSeguro('cursoCapacidadActual', curso.capacidadActual, '0');
+        setearValorSeguro('cursoEdadMinima', curso.edadMinima, '0');
+        setearValorSeguro('cursoEdadMaxima', curso.edadMaxima, '0');
+        setearValorSeguro('cursoDiasSemana', curso.diasSemana, '');
+        setearValorSeguro('cursoHoraInicio', curso.horaInicio, '');
+        setearValorSeguro('cursoHoraFin', curso.horaFin, '');
+        setearValorSeguro('cursoAula', curso.aula, '');
+        setearValorSeguro('cursoCostoMatricula', curso.costoMatricula, '0');
+        setearValorSeguro('cursoCostoMensualidad', curso.costoMensualidad, '0');
+        setearValorSeguro('cursoCostoMateriales', curso.costoMateriales, '0');
+        setearValorSeguro('cursoAnioAcademico', curso.anioAcademico, new Date().getFullYear());
+        setearValorSeguro('cursoPeriodo', curso.periodo, '');
+        setearValorSeguro('cursoActivo', curso.activo ? 'true' : 'false');
+        setearValorSeguro('cursoPermiteMatricula', curso.permiteMatricula ? 'true' : 'false');
+
+        if (curso.fechaInicio) {
+            const fechaInicio = new Date(curso.fechaInicio).toISOString().split('T')[0];
+            setearValorSeguro('cursoFechaInicio', fechaInicio);
+        }
+        if (curso.fechaFin) {
+            const fechaFin = new Date(curso.fechaFin).toISOString().split('T')[0];
+            setearValorSeguro('cursoFechaFin', fechaFin);
+        }
+
+        if (curso.profesor && curso.profesor.id) {
+            setearValorSeguro('cursoProfesorId', curso.profesor.id);
+        }
+
+        document.getElementById('formCursoModalLabel').textContent = 'Editar Curso';
+        const modal = new bootstrap.Modal(document.getElementById('formCursoModal'));
+        modal.show();
+
+        await cargarProfesores();
+    } catch (error) {
+        console.error('Error editing course:', error);
+        mostrarError('Error al cargar el curso');
+    }
+}
+
+async function eliminarCurso(cursoId) {
+    if (!confirm('¿Desea eliminar este curso?')) return;
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/cursos/${cursoId}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+
+        if (response.ok) {
+            mostrarExito('Curso eliminado o inactivado correctamente');
+            await cargarCursosCompletos();
+        } else {
+            const errorData = await response.json();
+            mostrarError(errorData.message || 'Error al eliminar el curso');
+        }
+    } catch (error) {
+        console.error('Error deleting course:', error);
+        mostrarError('Error al eliminar el curso');
+    }
+}
+
+function verDetallesCurso(cursoId) {
+    mostrarInfo('Detalles del curso en desarrollo');
+}
+
+function gestionarPagos() {
+    window.location.href = 'Gestion-pagos.html';
+}
+
+function gestionarUsuarios() {
+    window.location.href = 'Gestion-usuarios.html';
+}
+
+function gestionarProfesores() {
+    window.location.href = 'Gestion-profesores.html';
+}
+
+function gestionarEstudiantes() {
+    window.location.href = 'Gestion-estudiante.html';
+}
+
+function conectarWebSocket() {
+    const socket = new SockJS(`${API_BASE_URL}/ws`);
+    stompClient = Stomp.over(socket);
+    stompClient.connect({
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+    }, function (frame) {
+        console.log('Connected: ' + frame);
+        stompClient.subscribe('/topic/notificaciones', function (message) {
+            const notificacion = JSON.parse(message.body);
+            mostrarNotificacion(notificacion.mensaje, notificacion.tipo);
+            cargarDashboard();
+        });
+    }, function (error) {
+        console.error('WebSocket error:', error);
+        setTimeout(conectarWebSocket, 5000);
+    });
+}
+
+function refrescarActividad() {
+    mostrarActividadReciente();
+    mostrarEstadisticasDia();
+}
+
+function cambiarPeriodoGrafico(periodo) {
+    const buttons = document.querySelectorAll('#matriculasChart ~ .btn-group .btn');
+    buttons.forEach(btn => btn.classList.remove('active'));
+    event.target.classList.add('active');
+    if (charts.matriculas) {
+        charts.matriculas.data.labels = periodo === 'mes'
+            ? ['Sem 1', 'Sem 2', 'Sem 3', 'Sem 4']
+            : ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+        charts.matriculas.data.datasets[0].data = periodo === 'mes'
+            ? [30, 45, 60, 80]
+            : [45, 65, 80, 120, 95, 150, 130, 110, 90, 70, 60, 50];
+        charts.matriculas.update();
+    }
+}
+
+function verReporteFinanciero() {
+    mostrarInfo('Reporte financiero completo en desarrollo');
+}
+
+function ejecutarAccionAlerta(accion) {
+    mostrarInfo(`Acción ${accion} en desarrollo`);
+}
+
+function getMatriculaStatusClass(estado) {
+    switch (estado) {
+        case 'PENDIENTE': return 'pendiente';
+        case 'APROBADA': return 'aprobada';
+        case 'RECHAZADA': return 'rechazada';
+        default: return 'pendiente';
+    }
+}
+
+function getAlertIcon(nivel) {
+    switch (nivel.toUpperCase()) {
+        case 'WARNING': return 'exclamation-circle';
+        case 'DANGER': return 'exclamation-triangle';
+        case 'INFO': return 'info-circle';
+        case 'SUCCESS': return 'check-circle';
+        default: return 'bell';
+    }
+}
+
+function formatearFecha(fecha) {
+    if (!fecha) return 'N/A';
+    const date = new Date(fecha);
+    return date.toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+}
+
+function getVencimientoTexto(fechaVencimiento) {
+    if (!fechaVencimiento) return '';
+    const vencimiento = new Date(fechaVencimiento);
+    const now = new Date();
+    const diffDays = Math.ceil((vencimiento - now) / (1000 * 60 * 60 * 24));
+    if (diffDays < 0) return `Vencido hace ${Math.abs(diffDays)} días`;
+    if (diffDays === 0) return 'Vence hoy';
+    return `Vence en ${diffDays} días`;
+}
+
+function mostrarNotificacion(mensaje, tipo = 'info') {
+    const toast = document.getElementById('notificationToast');
+    const toastBody = document.getElementById('toastMessage');
+    toastBody.textContent = mensaje;
+    toast.classList.remove('bg-success', 'bg-danger', 'bg-info', 'bg-warning');
+    switch (tipo.toLowerCase()) {
+        case 'success': toast.classList.add('bg-success'); break;
+        case 'error': toast.classList.add('bg-danger'); break;
+        case 'info': toast.classList.add('bg-info'); break;
+        case 'warning': toast.classList.add('bg-warning'); break;
+    }
+    const bsToast = new bootstrap.Toast(toast);
+    bsToast.show();
+}
+
+function mostrarExito(mensaje) {
+    mostrarNotificacion(mensaje, 'success');
+}
+
+function mostrarError(mensaje) {
+    mostrarNotificacion(mensaje, 'error');
+}
+
+function mostrarInfo(mensaje) {
+    mostrarNotificacion(mensaje, 'info');
+}
+
+
+function cerrarSesion() {
+    localStorage.removeItem('token');
+    localStorage.removeItem('usuario');
+    window.location.href = 'login.html';
+}
+
+</script>
+</body>
+</html>
