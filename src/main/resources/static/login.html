@@ -209,94 +209,95 @@
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
 <script>
-    const API_BASE_URL = 'http://localhost:8080/api';
-    const loginForm = document.getElementById('loginForm');
-    const alertContainer = document.getElementById('alertContainer');
-    const loginButton = loginForm.querySelector('button[type="submit"]');
-    const loginText = loginButton.querySelector('.login-text');
-    const loadingText = loginButton.querySelector('.loading');
 
-    function showAlert(message, type = 'danger') {
-        const alertDiv = document.createElement('div');
-        alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
-        alertDiv.innerHTML = `${message}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>`;
-        alertContainer.innerHTML = '';
-        alertContainer.appendChild(alertDiv);
-        setTimeout(() => { if (alertDiv.parentNode) alertDiv.remove(); }, 5000);
-    }
+    const API_BASE_URL = `${window.location.origin}/api`;
+   const loginForm = document.getElementById('loginForm');
+   const alertContainer = document.getElementById('alertContainer');
+   const loginButton = loginForm.querySelector('button[type="submit"]');
+   const loginText = loginButton.querySelector('.login-text');
+   const loadingText = loginButton.querySelector('.loading');
 
-    function setLoading(loading) {
-        loginButton.disabled = loading;
-        loginText.style.display = loading ? 'none' : 'inline';
-        loadingText.style.display = loading ? 'inline' : 'none';
-    }
+   function showAlert(message, type = 'danger') {
+       const alertDiv = document.createElement('div');
+       alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+       alertDiv.innerHTML = `${message}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>`;
+       alertContainer.innerHTML = '';
+       alertContainer.appendChild(alertDiv);
+       setTimeout(() => { if (alertDiv.parentNode) alertDiv.remove(); }, 5000);
+   }
 
-    loginForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const formData = new FormData(loginForm);
-        const loginData = { email: formData.get('email'), password: formData.get('password') };
-        if (!loginData.email || !loginData.password) { showAlert('Por favor, completa todos los campos.'); return; }
-        try {
-            setLoading(true);
-            const response = await fetch(`${API_BASE_URL}/auth/login`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(loginData)
-            });
-            const data = await response.json();
-            if (response.ok) {
-                showAlert(`¡Bienvenido, ${data.nombre}!`, 'success');
-                localStorage.setItem('token', data.token);
-                localStorage.setItem('usuario', JSON.stringify({ id: data.id, nombre: data.nombre, email: data.email, rol: data.rol }));
-                localStorage.setItem('apoderadoId', data.id);
-                localStorage.setItem('sessionTimestamp', new Date().getTime().toString());
-                setTimeout(() => { window.location.href = data.rol === 'ADMIN' ? 'admin-dashboard.html' : 'padre-dashboard.html'; }, 1000);
-            } else {
-                if (data.mensaje) showAlert(data.mensaje);
-                else showAlert('Error al iniciar sesión. Por favor, intenta de nuevo.');
-            }
-        } catch (error) {
-            showAlert('Error de conexión. Por favor, verifica tu conexión a internet.');
-        } finally { setLoading(false); }
-    });
+   function setLoading(loading) {
+       loginButton.disabled = loading;
+       loginText.style.display = loading ? 'none' : 'inline';
+       loadingText.style.display = loading ? 'inline' : 'none';
+   }
 
-    window.addEventListener('beforeunload', () => {
-        localStorage.setItem('browserClosed', 'true');
-    });
+   loginForm.addEventListener('submit', async (e) => {
+       e.preventDefault();
+       const formData = new FormData(loginForm);
+       const loginData = { email: formData.get('email'), password: formData.get('password') };
+       if (!loginData.email || !loginData.password) { showAlert('Por favor, completa todos los campos.'); return; }
+       try {
+           setLoading(true);
+           const response = await fetch(`${API_BASE_URL}/auth/login`, {
+               method: 'POST',
+               headers: { 'Content-Type': 'application/json' },
+               body: JSON.stringify(loginData)
+           });
+           const data = await response.json();
+           if (response.ok) {
+               showAlert(`¡Bienvenido, ${data.nombre}!`, 'success');
+               localStorage.setItem('token', data.token);
+               localStorage.setItem('usuario', JSON.stringify({ id: data.id, nombre: data.nombre, email: data.email, rol: data.rol }));
+               localStorage.setItem('apoderadoId', data.id);
+               localStorage.setItem('sessionTimestamp', new Date().getTime().toString());
+               setTimeout(() => { window.location.href = data.rol === 'ADMIN' ? 'admin-dashboard.html' : 'padre-dashboard.html'; }, 1000);
+           } else {
+               if (data.mensaje) showAlert(data.mensaje);
+               else showAlert('Error al iniciar sesión. Por favor, intenta de nuevo.');
+           }
+       } catch (error) {
+           showAlert('Error de conexión. Por favor, verifica tu conexión a internet.');
+       } finally { setLoading(false); }
+   });
 
-    window.addEventListener('load', () => {
-        const browserClosed = localStorage.getItem('browserClosed');
-        if (browserClosed === 'true') {
-            localStorage.removeItem('token');
-            localStorage.removeItem('usuario');
-            localStorage.removeItem('apoderadoId');
-            localStorage.removeItem('sessionTimestamp');
-            localStorage.removeItem('browserClosed');
-        }
-        const token = localStorage.getItem('token');
-        const usuario = localStorage.getItem('usuario');
-        if (token && usuario) {
-            try {
-                const parsedUsuario = JSON.parse(usuario);
-                const sessionTimestamp = localStorage.getItem('sessionTimestamp');
-                const currentTime = new Date().getTime();
-                if (!sessionTimestamp || (currentTime - sessionTimestamp) > (8 * 60 * 60 * 1000)) {
-                    localStorage.removeItem('token');
-                    localStorage.removeItem('usuario');
-                    localStorage.removeItem('apoderadoId');
-                    localStorage.removeItem('sessionTimestamp');
-                    return;
-                }
-                showAlert('Ya tienes una sesión activa. Redirigiendo...', 'info');
-                setTimeout(() => { window.location.href = parsedUsuario.rol === 'ADMIN' ? 'admin-dashboard.html' : 'padre-dashboard.html'; }, 2000);
-            } catch {
-                localStorage.removeItem('token');
-                localStorage.removeItem('usuario');
-                localStorage.removeItem('apoderadoId');
-                localStorage.removeItem('sessionTimestamp');
-            }
-        }
-    });
+   window.addEventListener('beforeunload', () => {
+       localStorage.setItem('browserClosed', 'true');
+   });
+
+   window.addEventListener('load', () => {
+       const browserClosed = localStorage.getItem('browserClosed');
+       if (browserClosed === 'true') {
+           localStorage.removeItem('token');
+           localStorage.removeItem('usuario');
+           localStorage.removeItem('apoderadoId');
+           localStorage.removeItem('sessionTimestamp');
+           localStorage.removeItem('browserClosed');
+       }
+       const token = localStorage.getItem('token');
+       const usuario = localStorage.getItem('usuario');
+       if (token && usuario) {
+           try {
+               const parsedUsuario = JSON.parse(usuario);
+               const sessionTimestamp = localStorage.getItem('sessionTimestamp');
+               const currentTime = new Date().getTime();
+               if (!sessionTimestamp || (currentTime - sessionTimestamp) > (8 * 60 * 60 * 1000)) {
+                   localStorage.removeItem('token');
+                   localStorage.removeItem('usuario');
+                   localStorage.removeItem('apoderadoId');
+                   localStorage.removeItem('sessionTimestamp');
+                   return;
+               }
+               showAlert('Ya tienes una sesión activa. Redirigiendo...', 'info');
+               setTimeout(() => { window.location.href = parsedUsuario.rol === 'ADMIN' ? 'admin-dashboard.html' : 'padre-dashboard.html'; }, 2000);
+           } catch {
+               localStorage.removeItem('token');
+               localStorage.removeItem('usuario');
+               localStorage.removeItem('apoderadoId');
+               localStorage.removeItem('sessionTimestamp');
+           }
+       }
+   });
 </script>
 </body>
 </html>

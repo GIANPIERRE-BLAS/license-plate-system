@@ -750,504 +750,504 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
 
 <script>
-    const API_BASE_URL = 'http://localhost:8080/api';
-    let token = '';
-    let usuarioActual = null;
-    let estudiantesData = [];
-    let horarioActual = null;
-    let modalDetalleCurso = null;
+    const API_BASE_URL = `${window.location.origin}/api`;
+  let token = '';
+  let usuarioActual = null;
+  let estudiantesData = [];
+  let horarioActual = null;
+  let modalDetalleCurso = null;
 
-    const HORAS_DIA = [
-        '6:45 - 7:00',
-        '7:00 - 7:50',
-        '7:50 - 8:40',
-        '8:40 - 9:30',
-        '9:30 - 10:20',
-        '10:20 - 10:50',
-        '10:50 - 11:40',
-        '11:40 - 12:30',
-        '12:30 - 1:10',
-        '1:10 - 2:00',
-        '2:00 - 2:50'
-    ];
+  const HORAS_DIA = [
+      '6:45 - 7:00',
+      '7:00 - 7:50',
+      '7:50 - 8:40',
+      '8:40 - 9:30',
+      '9:30 - 10:20',
+      '10:20 - 10:50',
+      '10:50 - 11:40',
+      '11:40 - 12:30',
+      '12:30 - 1:10',
+      '1:10 - 2:00',
+      '2:00 - 2:50'
+  ];
 
-    const DIAS_SEMANA = ['LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES'];
+  const DIAS_SEMANA = ['LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES'];
 
-    const COLORES_CURSOS = [
-        '#FFB6C1', '#87CEEB', '#98FB98', '#FFD700', '#DDA0DD',
-        '#F0E68C', '#E0BBE4', '#FFDAB9', '#B0E0E6', '#FFDEAD',
-        '#D3D3D3', '#FFA07A', '#20B2AA', '#F5DEB3', '#FFC0CB',
-        '#ADD8E6', '#90EE90', '#FFFFE0', '#E6E6FA', '#FFE4B5'
-    ];
+  const COLORES_CURSOS = [
+      '#FFB6C1', '#87CEEB', '#98FB98', '#FFD700', '#DDA0DD',
+      '#F0E68C', '#E0BBE4', '#FFDAB9', '#B0E0E6', '#FFDEAD',
+      '#D3D3D3', '#FFA07A', '#20B2AA', '#F5DEB3', '#FFC0CB',
+      '#ADD8E6', '#90EE90', '#FFFFE0', '#E6E6FA', '#FFE4B5'
+  ];
 
-    document.addEventListener('DOMContentLoaded', async () => {
-        token = localStorage.getItem('token') || '';
-        modalDetalleCurso = new bootstrap.Modal(document.getElementById('modalDetalleCurso'));
-        await validarSesion();
-        await cargarEstudiantes();
-        cargarAniosAcademicos();
-    });
+  document.addEventListener('DOMContentLoaded', async () => {
+      token = localStorage.getItem('token') || '';
+      modalDetalleCurso = new bootstrap.Modal(document.getElementById('modalDetalleCurso'));
+      await validarSesion();
+      await cargarEstudiantes();
+      cargarAniosAcademicos();
+  });
 
-    async function validarSesion() {
-        if (!token) {
-            window.location.href = 'login.html';
-            return;
-        }
-        try {
-            const res = await fetch(`${API_BASE_URL}/auth/validate`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            if (!res.ok) throw new Error('Sesión inválida');
-            const data = await res.json();
-            if (data?.valido) {
-                usuarioActual = data.usuario;
-                document.getElementById('userName').textContent = usuarioActual.nombre || 'Usuario';
-            } else {
-                throw new Error('Sesión no válida');
-            }
-        } catch (err) {
-            console.error('Error validando sesión:', err);
-            localStorage.removeItem('token');
-            window.location.href = 'login.html';
-        }
-    }
+  async function validarSesion() {
+      if (!token) {
+          window.location.href = 'login.html';
+          return;
+      }
+      try {
+          const res = await fetch(`${API_BASE_URL}/auth/validate`, {
+              headers: { 'Authorization': `Bearer ${token}` }
+          });
+          if (!res.ok) throw new Error('Sesión inválida');
+          const data = await res.json();
+          if (data?.valido) {
+              usuarioActual = data.usuario;
+              document.getElementById('userName').textContent = usuarioActual.nombre || 'Usuario';
+          } else {
+              throw new Error('Sesión no válida');
+          }
+      } catch (err) {
+          console.error('Error validando sesión:', err);
+          localStorage.removeItem('token');
+          window.location.href = 'login.html';
+      }
+  }
 
-    async function cargarEstudiantes() {
-        try {
-            const apoderadoId = usuarioActual.id;
-            const res = await fetch(`${API_BASE_URL}/estudiantes/apoderado/${apoderadoId}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            if (!res.ok) throw new Error('Error al cargar estudiantes');
-            estudiantesData = await res.json();
-            const selectEstudiante = document.getElementById('selectEstudiante');
-            selectEstudiante.innerHTML = '<option value="">-- Seleccione un estudiante --</option>';
-            estudiantesData.forEach(est => {
-                const option = document.createElement('option');
-                option.value = est.id;
-                option.textContent = `${est.nombres} ${est.apellidos} - ${est.numeroDocumento}`;
-                selectEstudiante.appendChild(option);
-            });
-        } catch (err) {
-            console.error('Error cargando estudiantes:', err);
-            mostrarError('Error al cargar la lista de estudiantes');
-        }
-    }
+  async function cargarEstudiantes() {
+      try {
+          const apoderadoId = usuarioActual.id;
+          const res = await fetch(`${API_BASE_URL}/estudiantes/apoderado/${apoderadoId}`, {
+              headers: { 'Authorization': `Bearer ${token}` }
+          });
+          if (!res.ok) throw new Error('Error al cargar estudiantes');
+          estudiantesData = await res.json();
+          const selectEstudiante = document.getElementById('selectEstudiante');
+          selectEstudiante.innerHTML = '<option value="">-- Seleccione un estudiante --</option>';
+          estudiantesData.forEach(est => {
+              const option = document.createElement('option');
+              option.value = est.id;
+              option.textContent = `${est.nombres} ${est.apellidos} - ${est.numeroDocumento}`;
+              selectEstudiante.appendChild(option);
+          });
+      } catch (err) {
+          console.error('Error cargando estudiantes:', err);
+          mostrarError('Error al cargar la lista de estudiantes');
+      }
+  }
 
-    function cargarAniosAcademicos() {
-        const selectAnio = document.getElementById('selectAnioAcademico');
-        fetch(`${API_BASE_URL}/matriculas/anios`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            }
-        })
-        .then(res => {
-            if (!res.ok) throw new Error('Error al cargar años académicos');
-            return res.json();
-        })
-        .then(anios => {
-            if (!Array.isArray(anios)) return;
-            selectAnio.innerHTML = '<option value="">Todos</option>';
-            anios.forEach(anio => {
-                const option = document.createElement('option');
-                option.value = anio;
-                option.textContent = anio;
-                if (anio == new Date().getFullYear()) option.selected = true;
-                selectAnio.appendChild(option);
-            });
-        })
-        .catch(err => console.error('Error cargando años académicos:', err));
-    }
+  function cargarAniosAcademicos() {
+      const selectAnio = document.getElementById('selectAnioAcademico');
+      fetch(`${API_BASE_URL}/matriculas/anios`, {
+          method: 'GET',
+          headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+          }
+      })
+      .then(res => {
+          if (!res.ok) throw new Error('Error al cargar años académicos');
+          return res.json();
+      })
+      .then(anios => {
+          if (!Array.isArray(anios)) return;
+          selectAnio.innerHTML = '<option value="">Todos</option>';
+          anios.forEach(anio => {
+              const option = document.createElement('option');
+              option.value = anio;
+              option.textContent = anio;
+              if (anio == new Date().getFullYear()) option.selected = true;
+              selectAnio.appendChild(option);
+          });
+      })
+      .catch(err => console.error('Error cargando años académicos:', err));
+  }
 
-    async function cargarHorarioEstudiante() {
-        const estudianteId = document.getElementById('selectEstudiante').value;
-        const anioAcademico = document.getElementById('selectAnioAcademico').value;
+  async function cargarHorarioEstudiante() {
+      const estudianteId = document.getElementById('selectEstudiante').value;
+      const anioAcademico = document.getElementById('selectAnioAcademico').value;
 
-        if (!estudianteId) {
-            mostrarError('Por favor seleccione un estudiante');
-            return;
-        }
+      if (!estudianteId) {
+          mostrarError('Por favor seleccione un estudiante');
+          return;
+      }
 
-        try {
-            const apoderadoId = usuarioActual.id;
-            const res = await fetch(`${API_BASE_URL}/matriculas/apoderado/${apoderadoId}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            if (!res.ok) throw new Error('Error al cargar matrículas');
+      try {
+          const apoderadoId = usuarioActual.id;
+          const res = await fetch(`${API_BASE_URL}/matriculas/apoderado/${apoderadoId}`, {
+              headers: { 'Authorization': `Bearer ${token}` }
+          });
+          if (!res.ok) throw new Error('Error al cargar matrículas');
 
-            let matriculas = await res.json();
-            matriculas = matriculas.filter(m => m.estudianteId === parseInt(estudianteId));
-            if (anioAcademico) {
-                matriculas = matriculas.filter(m => m.anioAcademico === anioAcademico);
-            }
+          let matriculas = await res.json();
+          matriculas = matriculas.filter(m => m.estudianteId === parseInt(estudianteId));
+          if (anioAcademico) {
+              matriculas = matriculas.filter(m => m.anioAcademico === anioAcademico);
+          }
 
-            const matriculasActivas = matriculas.filter(m =>
-                m.estado === 'APROBADA' || m.estado === 'COMPLETADA'
-            );
+          const matriculasActivas = matriculas.filter(m =>
+              m.estado === 'APROBADA' || m.estado === 'COMPLETADA'
+          );
 
-            if (matriculasActivas.length === 0) {
-                mostrarMensajeVacio();
-                mostrarError('No se encontraron matrículas activas para este estudiante');
-                return;
-            }
+          if (matriculasActivas.length === 0) {
+              mostrarMensajeVacio();
+              mostrarError('No se encontraron matrículas activas para este estudiante');
+              return;
+          }
 
-            const matricula = matriculasActivas[0];
-            horarioActual = matricula;
-            mostrarInfoEstudiante(matricula);
-            await cargarCursosMatricula(matricula);
-            document.getElementById('btnImprimir').disabled = false;
+          const matricula = matriculasActivas[0];
+          horarioActual = matricula;
+          mostrarInfoEstudiante(matricula);
+          await cargarCursosMatricula(matricula);
+          document.getElementById('btnImprimir').disabled = false;
 
-        } catch (err) {
-            console.error('Error cargando horario:', err);
-            mostrarError('Error al cargar el horario del estudiante');
-            mostrarMensajeVacio();
-        }
-    }
+      } catch (err) {
+          console.error('Error cargando horario:', err);
+          mostrarError('Error al cargar el horario del estudiante');
+          mostrarMensajeVacio();
+      }
+  }
 
-    function mostrarInfoEstudiante(matricula) {
-        document.getElementById('infoNombreEstudiante').textContent = matricula.nombreEstudiante || '-';
-        document.getElementById('infoDocumento').textContent = matricula.documentoEstudiante || '-';
-        document.getElementById('infoNivel').textContent = matricula.nivelAcademico || '-';
-        document.getElementById('infoGrado').textContent = matricula.grado || '-';
-        document.getElementById('infoSeccion').textContent = matricula.seccion || '-';
-        const badgeEstado = document.getElementById('infoEstadoMatricula');
-        badgeEstado.textContent = matricula.estadoDescripcion || matricula.estado;
-        badgeEstado.className = 'badge ' + obtenerClaseEstado(matricula.estado);
-        document.getElementById('infoEstudianteContainer').style.display = 'block';
-        document.getElementById('mensajeVacio').style.display = 'none';
-    }
+  function mostrarInfoEstudiante(matricula) {
+      document.getElementById('infoNombreEstudiante').textContent = matricula.nombreEstudiante || '-';
+      document.getElementById('infoDocumento').textContent = matricula.documentoEstudiante || '-';
+      document.getElementById('infoNivel').textContent = matricula.nivelAcademico || '-';
+      document.getElementById('infoGrado').textContent = matricula.grado || '-';
+      document.getElementById('infoSeccion').textContent = matricula.seccion || '-';
+      const badgeEstado = document.getElementById('infoEstadoMatricula');
+      badgeEstado.textContent = matricula.estadoDescripcion || matricula.estado;
+      badgeEstado.className = 'badge ' + obtenerClaseEstado(matricula.estado);
+      document.getElementById('infoEstudianteContainer').style.display = 'block';
+      document.getElementById('mensajeVacio').style.display = 'none';
+  }
 
-    function parsearHorario(horarioStr) {
-        console.log('🔍 Parseando horario:', horarioStr);
-        if (!horarioStr || horarioStr === '-') {
-            return { dias: [], horaInicio: '', horaFin: '' };
-        }
-        let dias = [];
-        let horaInicio = '';
-        let horaFin = '';
-        const match = horarioStr.match(/(.*?)(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})/);
-        if (match) {
-            const textoDias = match[1];
-            horaInicio = match[2];
-            horaFin = match[3];
-            dias = textoDias.split(/[,;]/).map(d => d.trim()).filter(d => d && d.length > 2).map(d => d.toUpperCase());
-            console.log('✅ Parseo exitoso - días:', dias, 'horas:', horaInicio, '-', horaFin);
-        } else {
-            console.warn('⚠️ No se pudo parsear el horario:', horarioStr);
-        }
-        return { dias, horaInicio, horaFin };
-    }
+  function parsearHorario(horarioStr) {
+      console.log('🔍 Parseando horario:', horarioStr);
+      if (!horarioStr || horarioStr === '-') {
+          return { dias: [], horaInicio: '', horaFin: '' };
+      }
+      let dias = [];
+      let horaInicio = '';
+      let horaFin = '';
+      const match = horarioStr.match(/(.*?)(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})/);
+      if (match) {
+          const textoDias = match[1];
+          horaInicio = match[2];
+          horaFin = match[3];
+          dias = textoDias.split(/[,;]/).map(d => d.trim()).filter(d => d && d.length > 2).map(d => d.toUpperCase());
+          console.log('✅ Parseo exitoso - días:', dias, 'horas:', horaInicio, '-', horaFin);
+      } else {
+          console.warn('⚠️ No se pudo parsear el horario:', horarioStr);
+      }
+      return { dias, horaInicio, horaFin };
+  }
 
-    async function cargarCursosMatricula(matricula) {
-        console.log('=== INICIANDO CARGA DE CURSOS ===');
-        const cursos = matricula.cursos || [];
-        console.log('Cursos en la matrícula:', cursos);
+  async function cargarCursosMatricula(matricula) {
+      console.log('=== INICIANDO CARGA DE CURSOS ===');
+      const cursos = matricula.cursos || [];
+      console.log('Cursos en la matrícula:', cursos);
 
-        if (cursos.length === 0) {
-            mostrarError('Esta matrícula no tiene cursos asignados');
-            return;
-        }
+      if (cursos.length === 0) {
+          mostrarError('Esta matrícula no tiene cursos asignados');
+          return;
+      }
 
-        try {
-            const nivel = matricula.nivelAcademico || 'SECUNDARIA';
-            const res = await fetch(`${API_BASE_URL}/cursos/disponibles?nivel=${encodeURIComponent(nivel)}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            if (!res.ok) throw new Error('Error al cargar cursos disponibles');
+      try {
+          const nivel = matricula.nivelAcademico || 'SECUNDARIA';
+          const res = await fetch(`${API_BASE_URL}/cursos/disponibles?nivel=${encodeURIComponent(nivel)}`, {
+              headers: { 'Authorization': `Bearer ${token}` }
+          });
+          if (!res.ok) throw new Error('Error al cargar cursos disponibles');
 
-            const cursosDisponibles = await res.json();
-            console.log('Cursos disponibles:', cursosDisponibles);
+          const cursosDisponibles = await res.json();
+          console.log('Cursos disponibles:', cursosDisponibles);
 
-            const cursosConProfesor = cursos.map(curso => {
-                const detalle = cursosDisponibles.find(cd => cd.id === curso.cursoId);
-                const horarioParseado = parsearHorario(detalle?.horarioCompleto || '');
-                return {
-                    ...curso,
-                    id: curso.cursoId,
-                    nombre: detalle?.nombre || curso.nombreCurso || 'Sin nombre',
-                    codigo: detalle?.codigo || curso.codigoCurso || '-',
-                    nombreProfesor: detalle?.nombreProfesor || 'Sin asignar',
-                    horarioCompleto: detalle?.horarioCompleto || '-',
-                    diasSemana: horarioParseado.dias.join(','),
-                    horaInicio: horarioParseado.horaInicio,
-                    horaFin: horarioParseado.horaFin,
-                    modalidad: detalle?.modalidad || 'PRESENCIAL',
-                    aula: detalle?.aula || '-',
-                    creditos: detalle?.creditos || 0,
-                    periodo: detalle?.periodo || '-'
-                };
-            });
+          const cursosConProfesor = cursos.map(curso => {
+              const detalle = cursosDisponibles.find(cd => cd.id === curso.cursoId);
+              const horarioParseado = parsearHorario(detalle?.horarioCompleto || '');
+              return {
+                  ...curso,
+                  id: curso.cursoId,
+                  nombre: detalle?.nombre || curso.nombreCurso || 'Sin nombre',
+                  codigo: detalle?.codigo || curso.codigoCurso || '-',
+                  nombreProfesor: detalle?.nombreProfesor || 'Sin asignar',
+                  horarioCompleto: detalle?.horarioCompleto || '-',
+                  diasSemana: horarioParseado.dias.join(','),
+                  horaInicio: horarioParseado.horaInicio,
+                  horaFin: horarioParseado.horaFin,
+                  modalidad: detalle?.modalidad || 'PRESENCIAL',
+                  aula: detalle?.aula || '-',
+                  creditos: detalle?.creditos || 0,
+                  periodo: detalle?.periodo || '-'
+              };
+          });
 
-            console.log('Cursos procesados:', cursosConProfesor);
-            renderizarTablaCursos(cursosConProfesor);
-            generarHorarioSemanal(cursosConProfesor);
-            document.getElementById('cursosContainer').style.display = 'block';
-            document.getElementById('horarioContainer').style.display = 'block';
+          console.log('Cursos procesados:', cursosConProfesor);
+          renderizarTablaCursos(cursosConProfesor);
+          generarHorarioSemanal(cursosConProfesor);
+          document.getElementById('cursosContainer').style.display = 'block';
+          document.getElementById('horarioContainer').style.display = 'block';
 
-        } catch (err) {
-            console.error('Error procesando cursos:', err);
-            mostrarError('Error al cargar los cursos de la matrícula');
-        }
-    }
+      } catch (err) {
+          console.error('Error procesando cursos:', err);
+          mostrarError('Error al cargar los cursos de la matrícula');
+      }
+  }
 
-    function renderizarTablaCursos(cursos) {
-        const tbody = document.getElementById('tablaCursos');
-        if (cursos.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="9" class="text-center">No hay cursos matriculados</td></tr>';
-            return;
-        }
-        tbody.innerHTML = cursos.map(curso => {
-            const cursoId = curso.id || 0;
-            return `
-                <tr onclick="verDetalleCurso(${cursoId})" style="cursor: pointer;">
-                    <td>${curso.codigo || '-'}</td>
-                    <td><strong>${curso.nombre || '-'}</strong></td>
-                    <td>${curso.nombreProfesor || 'Sin asignar'}</td>
-                    <td>${curso.horarioCompleto || '-'}</td>
-                    <td>${curso.aula || '-'}</td>
-                    <td><span class="badge bg-info">${curso.modalidad || 'PRESENCIAL'}</span></td>
-                    <td class="text-center">${curso.creditos || 0}</td>
-                    <td>${curso.periodo || '-'}</td>
-                    <td><span class="badge ${curso.aprobado ? 'bg-success' : 'bg-warning'}">${curso.estado || '-'}</span></td>
-                </tr>
-            `;
-        }).join('');
-    }
+  function renderizarTablaCursos(cursos) {
+      const tbody = document.getElementById('tablaCursos');
+      if (cursos.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="9" class="text-center">No hay cursos matriculados</td></tr>';
+          return;
+      }
+      tbody.innerHTML = cursos.map(curso => {
+          const cursoId = curso.id || 0;
+          return `
+              <tr onclick="verDetalleCurso(${cursoId})" style="cursor: pointer;">
+                  <td>${curso.codigo || '-'}</td>
+                  <td><strong>${curso.nombre || '-'}</strong></td>
+                  <td>${curso.nombreProfesor || 'Sin asignar'}</td>
+                  <td>${curso.horarioCompleto || '-'}</td>
+                  <td>${curso.aula || '-'}</td>
+                  <td><span class="badge bg-info">${curso.modalidad || 'PRESENCIAL'}</span></td>
+                  <td class="text-center">${curso.creditos || 0}</td>
+                  <td>${curso.periodo || '-'}</td>
+                  <td><span class="badge ${curso.aprobado ? 'bg-success' : 'bg-warning'}">${curso.estado || '-'}</span></td>
+              </tr>
+          `;
+      }).join('');
+  }
 
-    function generarHashString(str) {
-        if (!str) return 0;
-        let hash = 0;
-        for (let i = 0; i < str.length; i++) {
-            const char = str.charCodeAt(i);
-            hash = ((hash << 5) - hash) + char;
-            hash = hash & hash;
-        }
-        return Math.abs(hash);
-    }
+  function generarHashString(str) {
+      if (!str) return 0;
+      let hash = 0;
+      for (let i = 0; i < str.length; i++) {
+          const char = str.charCodeAt(i);
+          hash = ((hash << 5) - hash) + char;
+          hash = hash & hash;
+      }
+      return Math.abs(hash);
+  }
 
-    function obtenerColorCurso(nombreCurso) {
-        if (!nombreCurso) return '#e9ecef';
-        const hash = generarHashString(nombreCurso);
-        const indice = hash % COLORES_CURSOS.length;
-        return COLORES_CURSOS[indice];
-    }
+  function obtenerColorCurso(nombreCurso) {
+      if (!nombreCurso) return '#e9ecef';
+      const hash = generarHashString(nombreCurso);
+      const indice = hash % COLORES_CURSOS.length;
+      return COLORES_CURSOS[indice];
+  }
 
-    function generarHorarioSemanal(cursos) {
-        const tbody = document.getElementById('tablaHorario');
-        const horario = {};
+  function generarHorarioSemanal(cursos) {
+      const tbody = document.getElementById('tablaHorario');
+      const horario = {};
 
-        HORAS_DIA.forEach(hora => {
-            horario[hora] = { LUNES: null, MARTES: null, MIERCOLES: null, JUEVES: null, VIERNES: null };
-        });
+      HORAS_DIA.forEach(hora => {
+          horario[hora] = { LUNES: null, MARTES: null, MIERCOLES: null, JUEVES: null, VIERNES: null };
+      });
 
-        console.log('📅 Generando horario con cursos:', cursos);
+      console.log('📅 Generando horario con cursos:', cursos);
 
-        cursos.forEach(curso => {
-            if (!curso.horaInicio || !curso.horaFin) return;
-            const diasCurso = curso.diasSemana ? curso.diasSemana.split(',').map(d => d.trim().toUpperCase()) : [];
-            if (diasCurso.length === 0) return;
+      cursos.forEach(curso => {
+          if (!curso.horaInicio || !curso.horaFin) return;
+          const diasCurso = curso.diasSemana ? curso.diasSemana.split(',').map(d => d.trim().toUpperCase()) : [];
+          if (diasCurso.length === 0) return;
 
-            HORAS_DIA.forEach(franja => {
-                const [horaInicioFranja, horaFinFranja] = franja.split(' - ');
-                if (horaCoincide(curso.horaInicio, curso.horaFin, horaInicioFranja, horaFinFranja)) {
-                    diasCurso.forEach(dia => {
-                        const diaFormateado = formatearDia(dia);
-                        if (horario[franja] && horario[franja][diaFormateado] !== undefined) {
-                            horario[franja][diaFormateado] = {
-                                nombre: curso.nombre,
-                                codigo: curso.codigo,
-                                profesor: curso.nombreProfesor,
-                                aula: curso.aula,
-                                cursoId: curso.id,
-                                color: obtenerColorCurso(curso.nombre)
-                            };
-                            console.log(`✅ ${curso.nombre} en ${franja} - ${diaFormateado}`);
-                        }
-                    });
-                }
-            });
-        });
+          HORAS_DIA.forEach(franja => {
+              const [horaInicioFranja, horaFinFranja] = franja.split(' - ');
+              if (horaCoincide(curso.horaInicio, curso.horaFin, horaInicioFranja, horaFinFranja)) {
+                  diasCurso.forEach(dia => {
+                      const diaFormateado = formatearDia(dia);
+                      if (horario[franja] && horario[franja][diaFormateado] !== undefined) {
+                          horario[franja][diaFormateado] = {
+                              nombre: curso.nombre,
+                              codigo: curso.codigo,
+                              profesor: curso.nombreProfesor,
+                              aula: curso.aula,
+                              cursoId: curso.id,
+                              color: obtenerColorCurso(curso.nombre)
+                          };
+                          console.log(`✅ ${curso.nombre} en ${franja} - ${diaFormateado}`);
+                      }
+                  });
+              }
+          });
+      });
 
-        tbody.innerHTML = HORAS_DIA.map(hora => {
-            const esRecreo = hora === '10:20 - 10:50';
-            const esAlmuerzo = hora === '12:30 - 1:10';
-            const esReflexion = hora === '6:45 - 7:00';
+      tbody.innerHTML = HORAS_DIA.map(hora => {
+          const esRecreo = hora === '10:20 - 10:50';
+          const esAlmuerzo = hora === '12:30 - 1:10';
+          const esReflexion = hora === '6:45 - 7:00';
 
-            if (esRecreo) {
-                return `<tr class="table-warning">
-                            <td class="text-center"><strong>${hora}</strong></td>
-                            <td colspan="5" class="text-center"><strong><i class="fas fa-coffee me-2"></i>DESCANSO</strong></td>
-                        </tr>`;
-            }
-            if (esAlmuerzo) {
-                return `<tr class="table-warning">
-                            <td class="text-center"><strong>${hora}</strong></td>
-                            <td colspan="5" class="text-center"><strong><i class="fas fa-utensils me-2"></i>ALMUERZO</strong></td>
-                        </tr>`;
-            }
-            if (esReflexion) {
-                return `<tr class="table-info">
-                            <td class="text-center"><strong>${hora}</strong></td>
-                            <td colspan="2" class="text-center"></td>
-                            <td colspan="3" class="text-center"><strong>REFLEXIÓN</strong></td>
-                        </tr>`;
-            }
+          if (esRecreo) {
+              return `<tr class="table-warning">
+                          <td class="text-center"><strong>${hora}</strong></td>
+                          <td colspan="5" class="text-center"><strong><i class="fas fa-coffee me-2"></i>DESCANSO</strong></td>
+                      </tr>`;
+          }
+          if (esAlmuerzo) {
+              return `<tr class="table-warning">
+                          <td class="text-center"><strong>${hora}</strong></td>
+                          <td colspan="5" class="text-center"><strong><i class="fas fa-utensils me-2"></i>ALMUERZO</strong></td>
+                      </tr>`;
+          }
+          if (esReflexion) {
+              return `<tr class="table-info">
+                          <td class="text-center"><strong>${hora}</strong></td>
+                          <td colspan="2" class="text-center"></td>
+                          <td colspan="3" class="text-center"><strong>REFLEXIÓN</strong></td>
+                      </tr>`;
+          }
 
-            return `<tr>
-                        <td class="text-center align-middle"><strong>${hora}</strong></td>
-                        ${DIAS_SEMANA.map(dia => {
-                            const curso = horario[hora][dia];
-                            if (curso) {
-                                return `<td onclick="verDetalleCurso(${curso.cursoId})"
-                                            style="cursor: pointer; background-color: ${curso.color}; color: #000;
-                                                   padding: 12px; text-align: center; vertical-align: middle;
-                                                   font-weight: 600; border: 2px solid #dee2e6;">
-                                            <div style="font-size: 0.9rem;">${curso.nombre}</div>
-                                        </td>`;
-                            }
-                            return `<td style="background-color: #fff; border: 1px solid #dee2e6;"></td>`;
-                        }).join('')}
-                    </tr>`;
-        }).join('');
-    }
+          return `<tr>
+                      <td class="text-center align-middle"><strong>${hora}</strong></td>
+                      ${DIAS_SEMANA.map(dia => {
+                          const curso = horario[hora][dia];
+                          if (curso) {
+                              return `<td onclick="verDetalleCurso(${curso.cursoId})"
+                                          style="cursor: pointer; background-color: ${curso.color}; color: #000;
+                                                 padding: 12px; text-align: center; vertical-align: middle;
+                                                 font-weight: 600; border: 2px solid #dee2e6;">
+                                          <div style="font-size: 0.9rem;">${curso.nombre}</div>
+                                      </td>`;
+                          }
+                          return `<td style="background-color: #fff; border: 1px solid #dee2e6;"></td>`;
+                      }).join('')}
+                  </tr>`;
+      }).join('');
+  }
 
-    function horaCoincide(cursoInicio, cursoFin, franjaInicio, franjaFin) {
-        const cursoInicioMinutos = convertirAMinutos(cursoInicio);
-        const cursoFinMinutos = convertirAMinutos(cursoFin);
-        const franjaInicioMinutos = convertirAMinutos(franjaInicio);
-        const franjaFinMinutos = convertirAMinutos(franjaFin);
-        return cursoInicioMinutos < franjaFinMinutos && cursoFinMinutos > franjaInicioMinutos;
-    }
+  function horaCoincide(cursoInicio, cursoFin, franjaInicio, franjaFin) {
+      const cursoInicioMinutos = convertirAMinutos(cursoInicio);
+      const cursoFinMinutos = convertirAMinutos(cursoFin);
+      const franjaInicioMinutos = convertirAMinutos(franjaInicio);
+      const franjaFinMinutos = convertirAMinutos(franjaFin);
+      return cursoInicioMinutos < franjaFinMinutos && cursoFinMinutos > franjaInicioMinutos;
+  }
 
-    function convertirAMinutos(hora) {
-        const [hh, mm] = hora.split(':').map(Number);
-        return hh * 60 + mm;
-    }
+  function convertirAMinutos(hora) {
+      const [hh, mm] = hora.split(':').map(Number);
+      return hh * 60 + mm;
+  }
 
-    function formatearDia(dia) {
-        const dias = {
-            'LUNES': 'LUNES',
-            'MARTES': 'MARTES',
-            'MIERCOLES': 'MIERCOLES',
-            'MIÉRCOLES': 'MIERCOLES',
-            'JUEVES': 'JUEVES',
-            'VIERNES': 'VIERNES',
-            'SABADO': 'SÁBADO',
-            'SÁBADO': 'SÁBADO'
-        };
-        return dias[dia.toUpperCase()] || dia.toUpperCase();
-    }
+  function formatearDia(dia) {
+      const dias = {
+          'LUNES': 'LUNES',
+          'MARTES': 'MARTES',
+          'MIERCOLES': 'MIERCOLES',
+          'MIÉRCOLES': 'MIERCOLES',
+          'JUEVES': 'JUEVES',
+          'VIERNES': 'VIERNES',
+          'SABADO': 'SÁBADO',
+          'SÁBADO': 'SÁBADO'
+      };
+      return dias[dia.toUpperCase()] || dia.toUpperCase();
+  }
 
-    async function verDetalleCurso(cursoId) {
-        try {
-            const res = await fetch(`${API_BASE_URL}/cursos/disponibles?nivel=${encodeURIComponent(horarioActual.nivelAcademico)}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            if (!res.ok) throw new Error('Error al cargar detalles del curso');
+  async function verDetalleCurso(cursoId) {
+      try {
+          const res = await fetch(`${API_BASE_URL}/cursos/disponibles?nivel=${encodeURIComponent(horarioActual.nivelAcademico)}`, {
+              headers: { 'Authorization': `Bearer ${token}` }
+          });
+          if (!res.ok) throw new Error('Error al cargar detalles del curso');
 
-            const cursosDisponibles = await res.json();
-            const curso = cursosDisponibles.find(c => c.id === cursoId);
-            if (!curso) throw new Error('Curso no encontrado');
+          const cursosDisponibles = await res.json();
+          const curso = cursosDisponibles.find(c => c.id === cursoId);
+          if (!curso) throw new Error('Curso no encontrado');
 
-            const html = `
-                <div class="row">
-                    <div class="col-md-6">
-                        <h6 class="mb-3"><i class="fas fa-info-circle me-2"></i>Información General</h6>
-                        <p><strong>Código:</strong> ${curso.codigo || '-'}</p>
-                        <p><strong>Nombre:</strong> ${curso.nombre || '-'}</p>
-                        <p><strong>Descripción:</strong> ${curso.descripcion || 'Sin descripción'}</p>
-                        <p><strong>Nivel:</strong> ${curso.nivelAcademico || '-'}</p>
-                        <p><strong>Grado:</strong> ${curso.grado || '-'}</p>
-                        <p><strong>Sección:</strong> ${curso.seccion || '-'}</p>
-                    </div>
-                    <div class="col-md-6">
-                        <h6 class="mb-3"><i class="fas fa-graduation-cap me-2"></i>Detalles Académicos</h6>
-                        <p><strong>Profesor:</strong> ${curso.nombreProfesor || 'Sin asignar'}</p>
-                        <p><strong>Modalidad:</strong> <span class="badge bg-info">${curso.modalidad || 'PRESENCIAL'}</span></p>
-                        <p><strong>Créditos:</strong> ${curso.creditos || 0}</p>
-                        <p><strong>Horas Semanales:</strong> ${curso.horasSemanales || 0}</p>
-                        <p><strong>Horario:</strong> ${curso.horarioCompleto || '-'}</p>
-                        <p><strong>Aula:</strong> ${curso.aula || '-'}</p>
-                    </div>
-                    <div class="col-12 mt-3">
-                        <h6 class="mb-3"><i class="fas fa-calendar me-2"></i>Período y Fechas</h6>
-                        <div class="row">
-                            <div class="col-md-4">
-                                <p><strong>Año Académico:</strong> ${curso.anioAcademico || '-'}</p>
-                            </div>
-                            <div class="col-md-4">
-                                <p><strong>Período:</strong> ${curso.periodo || '-'}</p>
-                            </div>
-                            <div class="col-md-4">
-                                <p><strong>Capacidad:</strong> ${curso.capacidadActual || 0} / ${curso.capacidadMaxima || 0}</p>
-                            </div>
-                            <div class="col-md-6">
-                                <p><strong>Fecha Inicio:</strong> ${formatearFecha(curso.fechaInicio) || '-'}</p>
-                            </div>
-                            <div class="col-md-6">
-                                <p><strong>Fecha Fin:</strong> ${formatearFecha(curso.fechaFin) || '-'}</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
+          const html = `
+              <div class="row">
+                  <div class="col-md-6">
+                      <h6 class="mb-3"><i class="fas fa-info-circle me-2"></i>Información General</h6>
+                      <p><strong>Código:</strong> ${curso.codigo || '-'}</p>
+                      <p><strong>Nombre:</strong> ${curso.nombre || '-'}</p>
+                      <p><strong>Descripción:</strong> ${curso.descripcion || 'Sin descripción'}</p>
+                      <p><strong>Nivel:</strong> ${curso.nivelAcademico || '-'}</p>
+                      <p><strong>Grado:</strong> ${curso.grado || '-'}</p>
+                      <p><strong>Sección:</strong> ${curso.seccion || '-'}</p>
+                  </div>
+                  <div class="col-md-6">
+                      <h6 class="mb-3"><i class="fas fa-graduation-cap me-2"></i>Detalles Académicos</h6>
+                      <p><strong>Profesor:</strong> ${curso.nombreProfesor || 'Sin asignar'}</p>
+                      <p><strong>Modalidad:</strong> <span class="badge bg-info">${curso.modalidad || 'PRESENCIAL'}</span></p>
+                      <p><strong>Créditos:</strong> ${curso.creditos || 0}</p>
+                      <p><strong>Horas Semanales:</strong> ${curso.horasSemanales || 0}</p>
+                      <p><strong>Horario:</strong> ${curso.horarioCompleto || '-'}</p>
+                      <p><strong>Aula:</strong> ${curso.aula || '-'}</p>
+                  </div>
+                  <div class="col-12 mt-3">
+                      <h6 class="mb-3"><i class="fas fa-calendar me-2"></i>Período y Fechas</h6>
+                      <div class="row">
+                          <div class="col-md-4">
+                              <p><strong>Año Académico:</strong> ${curso.anioAcademico || '-'}</p>
+                          </div>
+                          <div class="col-md-4">
+                              <p><strong>Período:</strong> ${curso.periodo || '-'}</p>
+                          </div>
+                          <div class="col-md-4">
+                              <p><strong>Capacidad:</strong> ${curso.capacidadActual || 0} / ${curso.capacidadMaxima || 0}</p>
+                          </div>
+                          <div class="col-md-6">
+                              <p><strong>Fecha Inicio:</strong> ${formatearFecha(curso.fechaInicio) || '-'}</p>
+                          </div>
+                          <div class="col-md-6">
+                              <p><strong>Fecha Fin:</strong> ${formatearFecha(curso.fechaFin) || '-'}</p>
+                          </div>
+                      </div>
+                  </div>
+              </div>
+          `;
 
-            document.getElementById('detalleCursoContent').innerHTML = html;
-            modalDetalleCurso.show();
+          document.getElementById('detalleCursoContent').innerHTML = html;
+          modalDetalleCurso.show();
 
-        } catch (err) {
-            console.error('Error cargando detalle del curso:', err);
-            mostrarError('Error al cargar los detalles del curso');
-        }
-    }
+      } catch (err) {
+          console.error('Error cargando detalle del curso:', err);
+          mostrarError('Error al cargar los detalles del curso');
+      }
+  }
 
-    function imprimirHorario() {
-        window.print();
-    }
+  function imprimirHorario() {
+      window.print();
+  }
 
-    function mostrarMensajeVacio() {
-        document.getElementById('infoEstudianteContainer').style.display = 'none';
-        document.getElementById('horarioContainer').style.display = 'none';
-        document.getElementById('cursosContainer').style.display = 'none';
-        document.getElementById('mensajeVacio').style.display = 'block';
-        document.getElementById('btnImprimir').disabled = true;
-    }
+  function mostrarMensajeVacio() {
+      document.getElementById('infoEstudianteContainer').style.display = 'none';
+      document.getElementById('horarioContainer').style.display = 'none';
+      document.getElementById('cursosContainer').style.display = 'none';
+      document.getElementById('mensajeVacio').style.display = 'block';
+      document.getElementById('btnImprimir').disabled = true;
+  }
 
-    function obtenerClaseEstado(estado) {
-        const clases = {
-            'PENDIENTE': 'bg-warning',
-            'APROBADA': 'bg-success',
-            'RECHAZADA': 'bg-danger',
-            'COMPLETADA': 'bg-primary',
-            'EN_PROCESO': 'bg-info'
-        };
-        return clases[estado] || 'bg-secondary';
-    }
+  function obtenerClaseEstado(estado) {
+      const clases = {
+          'PENDIENTE': 'bg-warning',
+          'APROBADA': 'bg-success',
+          'RECHAZADA': 'bg-danger',
+          'COMPLETADA': 'bg-primary',
+          'EN_PROCESO': 'bg-info'
+      };
+      return clases[estado] || 'bg-secondary';
+  }
 
-    function formatearFecha(fecha) {
-        if (!fecha) return '-';
-        const date = new Date(fecha);
-        return date.toLocaleDateString('es-PE', { year: 'numeric', month: 'long', day: 'numeric' });
-    }
+  function formatearFecha(fecha) {
+      if (!fecha) return '-';
+      const date = new Date(fecha);
+      return date.toLocaleDateString('es-PE', { year: 'numeric', month: 'long', day: 'numeric' });
+  }
 
-    function mostrarExito(mensaje) {
-        document.getElementById('toastMessage').textContent = mensaje;
-        const toast = new bootstrap.Toast(document.getElementById('notificationToast'));
-        toast.show();
-    }
+  function mostrarExito(mensaje) {
+      document.getElementById('toastMessage').textContent = mensaje;
+      const toast = new bootstrap.Toast(document.getElementById('notificationToast'));
+      toast.show();
+  }
 
-    function mostrarError(mensaje) {
-        document.getElementById('toastMessage').textContent = mensaje;
-        const toast = new bootstrap.Toast(document.getElementById('notificationToast'));
-        toast.show();
-    }
+  function mostrarError(mensaje) {
+      document.getElementById('toastMessage').textContent = mensaje;
+      const toast = new bootstrap.Toast(document.getElementById('notificationToast'));
+      toast.show();
+  }
 
-    function cerrarSesion() {
-        localStorage.removeItem('token');
-        window.location.href = 'login.html';
-    }
+  function cerrarSesion() {
+      localStorage.removeItem('token');
+      window.location.href = 'login.html';
+  }
 </script>
 
 </body>

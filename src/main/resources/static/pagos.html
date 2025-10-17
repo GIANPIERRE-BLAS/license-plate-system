@@ -803,947 +803,947 @@
     <!-- JavaScript Principal -->
     <script>
 
-const API_BASE_URL = 'http://localhost:8080/api';
-let currentUser = null;
-let allPagos = [];
-let filteredPagos = [];
-let currentFilter = 'todos';
-let selectedPayment = null;
-let selectedPaymentMethod = null;
-
-document.addEventListener('DOMContentLoaded', function() {
-    verificarAutenticacion();
-});
-
-function verificarAutenticacion() {
-    const token = localStorage.getItem('token');
-    const usuario = localStorage.getItem('usuario');
-
-    if (!token || !usuario) {
-        window.location.href = 'login.html';
-        return;
-    }
-
-    try {
-        currentUser = JSON.parse(usuario);
-
-        if (currentUser.rol !== 'PADRE') {
-            window.location.href = 'login.html';
-            return;
-        }
-
-        document.getElementById('userName').textContent = currentUser.nombre;
-        cargarPagos();
-
-    } catch (error) {
-        console.error('Error al verificar autenticación:', error);
-        cerrarSesion();
-    }
-}
-
-function cerrarSesion() {
-    if (confirm('¿Está seguro que desea cerrar sesión?')) {
-        localStorage.removeItem('token');
-        localStorage.removeItem('usuario');
-        window.location.href = 'login.html';
-    }
-}
-
-async function cargarPagos() {
-    try {
-        document.getElementById('loading').style.display = 'block';
-        document.getElementById('pagosContent').style.display = 'none';
-
-        const response = await fetch(`${API_BASE_URL}/pagos/apoderado/${currentUser.id}`, {
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                'Content-Type': 'application/json'
-            }
-        });
-
-        if (response.ok) {
-            allPagos = await response.json();
-            console.log('Pagos cargados:', allPagos);
-            filteredPagos = allPagos;
-            mostrarPagos();
-            mostrarResumen();
-        } else if (response.status === 404 || response.status === 204) {
-            allPagos = [];
-            filteredPagos = [];
-            mostrarPagos();
-            mostrarResumen();
-        } else {
-            throw new Error('Error al cargar pagos');
-        }
-
-    } catch (error) {
-        console.error('Error:', error);
-        mostrarError('Error al cargar la información de pagos. Intente nuevamente.');
-        allPagos = [];
-        filteredPagos = [];
-        mostrarPagos();
-        mostrarResumen();
-    } finally {
-        document.getElementById('loading').style.display = 'none';
-        document.getElementById('pagosContent').style.display = 'block';
-    }
-}
-
-function mostrarResumen() {
-    const container = document.getElementById('summaryContainer');
-
-    const totalDeuda = allPagos
-        .filter(p => ['PENDIENTE', 'VENCIDO', 'PARCIAL'].includes(p.estado))
-        .reduce((sum, p) => sum + (p.montoPendiente || 0), 0);
-
-    const totalPagado = allPagos
-        .filter(p => p.estado === 'PAGADO')
-        .reduce((sum, p) => sum + (p.montoTotal || 0), 0);
-
-    const vencidos = allPagos.filter(p => p.estado === 'VENCIDO').length;
-    const pendientes = allPagos.filter(p => p.estado === 'PENDIENTE').length;
-
-    const stats = [
-        {
-            icon: 'fas fa-exclamation-triangle',
-            amount: `S/ ${totalDeuda.toFixed(2)}`,
-            label: 'Deuda Total',
-            color: 'danger'
-        },
-        {
-            icon: 'fas fa-check-circle',
-            amount: `S/ ${totalPagado.toFixed(2)}`,
-            label: 'Total Pagado',
-            color: 'success'
-        },
-        {
-            icon: 'fas fa-clock',
-            amount: pendientes,
-            label: 'Pagos Pendientes',
-            color: 'warning'
-        },
-        {
-            icon: 'fas fa-exclamation-circle',
-            amount: vencidos,
-            label: 'Pagos Vencidos',
-            color: 'danger'
-        }
-    ];
-
-    container.innerHTML = stats.map(stat => `
-        <div class="col-md-3 col-sm-6 mb-3">
-            <div class="summary-card animate__animated animate__bounceIn">
-                <div class="summary-icon">
-                    <i class="${stat.icon}"></i>
-                </div>
-                <div class="summary-amount">${stat.amount}</div>
-                <div class="summary-label">${stat.label}</div>
-            </div>
-        </div>
-    `).join('');
-}
-
-function mostrarPagos() {
-    const container = document.getElementById('pagosContainer');
-
-    if (filteredPagos.length === 0) {
-        container.innerHTML = `
-            <div class="text-center p-5">
-                <i class="fas fa-receipt fa-3x mb-3" style="color: var(--institutional-yellow);"></i>
-                <h5 style="color: var(--institutional-red);">No hay pagos para mostrar</h5>
-                <p class="text-muted">No se encontraron pagos con los filtros aplicados.</p>
-            </div>
-        `;
-        return;
-    }
-
-    container.innerHTML = filteredPagos.map(pago => `
-        <div class="pago-card pago-${pago.estado.toLowerCase()} animate__animated animate__fadeInUp">
-            <div class="d-flex justify-content-between align-items-start mb-3">
-                <div class="flex-grow-1">
-                    <h5 class="mb-2" style="color: var(--institutional-red); font-weight: 700;">
-                        <i class="fas fa-file-invoice me-2"></i>${pago.concepto}
-                    </h5>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <p class="mb-1"><strong>Estudiante:</strong> ${pago.nombreEstudiante || 'N/A'}</p>
-                            <p class="mb-1"><strong>Grado:</strong> ${pago.grado || 'N/A'}</p>
-                            <p class="mb-1"><strong>Descripción:</strong> ${pago.descripcion || 'N/A'}</p>
-                        </div>
-                        <div class="col-md-6">
-                            <p class="mb-1"><strong>Monto Total:</strong> S/ ${pago.montoTotal.toFixed(2)}</p>
-                            ${pago.montoPendiente > 0 ? `<p class="mb-1"><strong>Pendiente:</strong> S/ ${pago.montoPendiente.toFixed(2)}</p>` : ''}
-                            <p class="mb-1"><strong>Vencimiento:</strong> ${formatearFecha(pago.fechaVencimiento)}</p>
-                            ${pago.fechaPago ? `<p class="mb-1"><strong>Fecha de Pago:</strong> ${formatearFecha(pago.fechaPago)}</p>` : ''}
-                            ${pago.metodoPago ? `<p class="mb-1"><strong>Método:</strong> ${pago.metodoPago}</p>` : ''}
-                        </div>
-                    </div>
-                </div>
-                <div class="d-flex flex-column align-items-end">
-                    <span class="status-badge badge-${pago.estado.toLowerCase()} mb-2">
-                        ${getEstadoLabel(pago.estado)}
-                    </span>
-                    <div class="d-flex gap-2">
-                        <button class="btn btn-sm btn-outline-primary" onclick="verDetalles(${pago.id})">
-                            <i class="fas fa-eye"></i>
-                        </button>
-                        ${pago.estado !== 'PAGADO' ? `
-                            <button class="btn btn-sm btn-success" onclick="procesarPago(${pago.id})">
-                                <i class="fas fa-credit-card"></i> Pagar
-                            </button>
-                        ` : `
-                            <button class="btn btn-sm btn-info" onclick="descargarComprobante(${pago.id})">
-                                <i class="fas fa-download"></i>
-                            </button>
-                        `}
-                    </div>
-                </div>
-            </div>
-
-            ${pago.estado === 'PARCIAL' ? `
-                <div class="mt-3">
-                    <div class="d-flex justify-content-between mb-2">
-                        <small>Progreso del Pago</small>
-                        <small>${((pago.montoTotal - pago.montoPendiente) / pago.montoTotal * 100).toFixed(1)}%</small>
-                    </div>
-                    <div class="progress">
-                        <div class="progress-bar" style="width: ${(pago.montoTotal - pago.montoPendiente) / pago.montoTotal * 100}%"></div>
-                    </div>
-                </div>
-            ` : ''}
-        </div>
-    `).join('');
-}
-
-function filtrarPagos(filtro) {
-    currentFilter = filtro;
-
-    document.querySelectorAll('.filter-tab').forEach(tab => {
-        tab.classList.remove('active');
-    });
-    document.querySelector(`[data-filter="${filtro}"]`).classList.add('active');
-
-    switch (filtro) {
-        case 'pendientes':
-            filteredPagos = allPagos.filter(p => p.estado === 'PENDIENTE');
-            break;
-        case 'vencidos':
-            filteredPagos = allPagos.filter(p => p.estado === 'VENCIDO');
-            break;
-        case 'pagados':
-            filteredPagos = allPagos.filter(p => p.estado === 'PAGADO');
-            break;
-        default:
-            filteredPagos = allPagos;
-    }
-
-    mostrarPagos();
-}
-
-function verDetalles(pagoId) {
-    const pago = allPagos.find(p => p.id === pagoId);
-    if (!pago) return;
-
-    const contenido = `
-        <div class="row">
-            <div class="col-md-6">
-                <h6 style="color: var(--institutional-red);">
-                    <i class="fas fa-info-circle me-2"></i>Información General
-                </h6>
-                <table class="table table-borderless">
-                    <tr><td><strong>ID:</strong></td><td>${pago.id}</td></tr>
-                    <tr><td><strong>Concepto:</strong></td><td>${pago.concepto}</td></tr>
-                    <tr><td><strong>Estudiante:</strong></td><td>${pago.nombreEstudiante || 'N/A'}</td></tr>
-                    <tr><td><strong>Grado:</strong></td><td>${pago.grado || 'N/A'}</td></tr>
-                    <tr><td><strong>Descripción:</strong></td><td>${pago.descripcion || 'N/A'}</td></tr>
-                </table>
-            </div>
-            <div class="col-md-6">
-                <h6 style="color: var(--institutional-red);">
-                    <i class="fas fa-money-bill me-2"></i>Información Financiera
-                </h6>
-                <table class="table table-borderless">
-                    <tr><td><strong>Monto Total:</strong></td><td>S/ ${pago.montoTotal.toFixed(2)}</td></tr>
-                    <tr><td><strong>Monto Pendiente:</strong></td><td>S/ ${pago.montoPendiente.toFixed(2)}</td></tr>
-                    <tr><td><strong>Estado:</strong></td><td><span class="status-badge badge-${pago.estado.toLowerCase()}">${getEstadoLabel(pago.estado)}</span></td></tr>
-                    <tr><td><strong>Fecha Vencimiento:</strong></td><td>${formatearFecha(pago.fechaVencimiento)}</td></tr>
-                    ${pago.fechaPago ? `<tr><td><strong>Fecha de Pago:</strong></td><td>${formatearFecha(pago.fechaPago)}</td></tr>` : ''}
-                    ${pago.metodoPago ? `<tr><td><strong>Método de Pago:</strong></td><td>${pago.metodoPago}</td></tr>` : ''}
-                    ${pago.numeroComprobante ? `<tr><td><strong>N° Comprobante:</strong></td><td>${pago.numeroComprobante}</td></tr>` : ''}
-                </table>
-            </div>
-        </div>
-    `;
-
-    document.getElementById('detallesPagoContent').innerHTML = contenido;
-    new bootstrap.Modal(document.getElementById('detallesPagoModal')).show();
-}
-
-function procesarPago(pagoId) {
-    selectedPayment = allPagos.find(p => p.id === pagoId);
-    if (!selectedPayment) return;
-
-    const infoPago = `
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <h6 class="mb-0">${selectedPayment.concepto}</h6>
-            <span class="status-badge badge-${selectedPayment.estado.toLowerCase()}">
-                ${getEstadoLabel(selectedPayment.estado)}
-            </span>
-        </div>
-        <p class="mb-2"><strong>Estudiante:</strong> ${selectedPayment.nombreEstudiante || 'N/A'}</p>
-        <p class="mb-2"><strong>Monto Pendiente:</strong> <span style="font-size: 1.2em; font-weight: bold; color: var(--institutional-red);">S/ ${selectedPayment.montoPendiente.toFixed(2)}</span></p>
-        <p class="mb-2"><strong>Vencimiento:</strong> ${formatearFecha(selectedPayment.fechaVencimiento)}</p>
-    `;
-
-    document.getElementById('infoPagoContent').innerHTML = infoPago;
-    document.getElementById('montoPago').value = selectedPayment.montoPendiente.toFixed(2);
-    document.getElementById('montoPago').max = selectedPayment.montoPendiente.toFixed(2);
-
-    document.getElementById('formularioPago').style.display = 'none';
-    document.getElementById('camposEspecificos').innerHTML = '';
-    document.getElementById('metodoPago').value = '';
-    document.getElementById('comprobantePreview').style.display = 'none';
-    document.getElementById('btnConfirmarPago').disabled = true;
-
-    document.querySelectorAll('.payment-method').forEach(method => {
-        method.classList.remove('selected');
-    });
-
-    selectedPaymentMethod = null;
-
-    new bootstrap.Modal(document.getElementById('procesarPagoModal')).show();
-}
-
-function seleccionarMetodoPago(metodo) {
-    document.querySelectorAll('.payment-method').forEach(method => {
-        method.classList.remove('selected');
-    });
-
-    event.target.closest('.payment-method').classList.add('selected');
-    selectedPaymentMethod = metodo;
-
-    document.getElementById('metodoPago').value = getMetodoLabelDisplay(metodo);
-    document.getElementById('formularioPago').style.display = 'block';
-
-    mostrarCamposEspecificos(metodo);
-    generarVistaPrevia();
-}
-
-function mostrarCamposEspecificos(metodo) {
-    const container = document.getElementById('camposEspecificos');
-    let campos = '';
-
-    switch (metodo) {
-        case 'tarjeta':
-            campos = `
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label for="numeroTarjeta" class="form-label">Número de Tarjeta * (Visa/Mastercard)</label>
-                        <input type="text" class="form-control" id="numeroTarjeta" placeholder="**** **** **** ****" maxlength="19" required>
-                    </div>
-                    <div class="col-md-3 mb-3">
-                        <label for="fechaExpiracion" class="form-label">Fecha Exp. * (MM/AA)</label>
-                        <input type="text" class="form-control" id="fechaExpiracion" placeholder="MM/AA" maxlength="5" required>
-                    </div>
-                    <div class="col-md-3 mb-3">
-                        <label for="cvv" class="form-label">CVV *</label>
-                        <input type="text" class="form-control" id="cvv" placeholder="123" maxlength="4" required>
-                    </div>
-                    <div class="col-md-12 mb-3">
-                        <label for="nombreTarjeta" class="form-label">Nombre del Titular *</label>
-                        <input type="text" class="form-control" id="nombreTarjeta" placeholder="Como aparece en la tarjeta" required>
-                    </div>
-                </div>
-            `;
-            break;
-
-        case 'transferencia':
-            campos = `
-                <div class="alert alert-info">
-                    <h6><i class="fas fa-university me-2"></i>Datos para Transferencia (BCP)</h6>
-                    <p class="mb-1"><strong>Banco:</strong> BCP - Banco de Crédito del Perú</p>
-                    <p class="mb-1"><strong>Cuenta Corriente:</strong> 194-2158749-0-32</p>
-                    <p class="mb-1"><strong>CCI:</strong> 002-194-002158749032-15</p>
-                    <p class="mb-1"><strong>Titular:</strong> Colegio César Vallejo S.A.C.</p>
-                </div>
-                <div class="mb-3">
-                    <label for="numeroOperacion" class="form-label">Número de Operación * (8-10 dígitos)</label>
-                    <input type="text" class="form-control" id="numeroOperacion" placeholder="Ej: 1234567890" maxlength="10" required>
-                </div>
-                <div class="mb-3">
-                    <label for="fechaOperacion" class="form-label">Fecha de Operación *</label>
-                    <input type="date" class="form-control" id="fechaOperacion" required>
-                </div>
-            `;
-            break;
-
-        case 'efectivo':
-            campos = `
-                <div class="alert alert-warning">
-                    <h6><i class="fas fa-money-bill me-2"></i>Pago en Efectivo</h6>
-                    <p class="mb-0">El pago en efectivo debe realizarse en la oficina de administración del colegio en horario de 8:00 AM a 4:00 PM.</p>
-                </div>
-                <div class="mb-3">
-                    <label for="fechaPagoEfectivo" class="form-label">Fecha de Pago Programada *</label>
-                    <input type="date" class="form-control" id="fechaPagoEfectivo" required>
-                </div>
-            `;
-            break;
-
-        case 'yape':
-            campos = `
-                <div class="text-center mb-3">
-                    <div class="qr-code mx-auto mb-3">
-                        <i class="fas fa-qrcode fa-3x text-white"></i>
-                    </div>
-                    <p><strong>Escanea el código QR con tu app de Yape o Plin</strong></p>
-                    <p class="text-muted">Número: 987 654 321</p>
-                </div>
-                <div class="mb-3">
-                    <label for="numeroOperacionYape" class="form-label">Número de Operación * (8-10 dígitos)</label>
-                    <input type="text" class="form-control" id="numeroOperacionYape" placeholder="Ej: 1234567890" maxlength="10" required>
-                </div>
-                <div class="mb-3">
-                    <label for="telefonoYape" class="form-label">Número de Teléfono * (9 dígitos)</label>
-                    <input type="text" class="form-control" id="telefonoYape" placeholder="Ej: 987654321" maxlength="9" required>
-                </div>
-            `;
-            break;
-    }
-
-    container.innerHTML = campos;
-    document.getElementById('btnConfirmarPago').disabled = false;
-    agregarValidaciones(metodo);
-}
-
-function agregarValidaciones(metodo) {
-    switch (metodo) {
-        case 'tarjeta':
-            const numeroTarjeta = document.getElementById('numeroTarjeta');
-            numeroTarjeta.addEventListener('input', function(e) {
-                let value = e.target.value.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
-                let formattedValue = value.match(/.{1,4}/g)?.join(' ') || value;
-                e.target.value = formattedValue;
-            });
-
-            const fechaExp = document.getElementById('fechaExpiracion');
-            fechaExp.addEventListener('input', function(e) {
-                let value = e.target.value.replace(/\D/g, '');
-                if (value.length >= 2) {
-                    value = value.substring(0, 2) + '/' + value.substring(2, 4);
-                }
-                e.target.value = value;
-            });
-
-            const cvv = document.getElementById('cvv');
-            cvv.addEventListener('input', function(e) {
-                e.target.value = e.target.value.replace(/[^0-9]/g, '');
-            });
-            break;
-
-        case 'transferencia':
-        case 'yape':
-            const numeroOperacion = document.getElementById(metodo === 'transferencia' ? 'numeroOperacion' : 'numeroOperacionYape');
-            numeroOperacion.addEventListener('input', function(e) {
-                e.target.value = e.target.value.replace(/[^0-9]/g, '');
-            });
-
-            if (metodo === 'yape') {
-                const telefonoYape = document.getElementById('telefonoYape');
-                telefonoYape.addEventListener('input', function(e) {
-                    e.target.value = e.target.value.replace(/[^0-9]/g, '');
-                });
-            }
-            break;
-    }
-}
-
-function validarCamposEspecificos() {
-    const montoPago = parseFloat(document.getElementById('montoPago').value);
-    if (isNaN(montoPago) || montoPago <= 0 || montoPago > selectedPayment.montoPendiente) {
-        mostrarError('El monto ingresado no es válido');
-        return false;
-    }
-
-    switch (selectedPaymentMethod) {
-        case 'tarjeta':
-            const numeroTarjeta = document.getElementById('numeroTarjeta').value.replace(/\s/g, '');
-            const fechaExp = document.getElementById('fechaExpiracion').value;
-            const cvv = document.getElementById('cvv').value;
-            const nombreTarjeta = document.getElementById('nombreTarjeta').value;
-
-            if (numeroTarjeta.length !== 16) {
-                mostrarError('El número de tarjeta debe tener 16 dígitos');
-                return false;
-            }
-            if (!fechaExp.match(/^(0[1-9]|1[0-2])\/[0-9]{2}$/)) {
-                mostrarError('Fecha de expiración inválida (MM/AA)');
-                return false;
-            }
-            const [mes, anio] = fechaExp.split('/');
-            const fechaActual = new Date();
-            const anioActual = fechaActual.getFullYear() % 100;
-            const mesActual = fechaActual.getMonth() + 1;
-            if (parseInt(anio) < anioActual || (parseInt(anio) === anioActual && parseInt(mes) < mesActual)) {
-                mostrarError('La tarjeta está expirada');
-                return false;
-            }
-            if (cvv.length < 3 || cvv.length > 4) {
-                mostrarError('El CVV debe tener 3 o 4 dígitos');
-                return false;
-            }
-            if (!nombreTarjeta.trim()) {
-                mostrarError('El nombre del titular es requerido');
-                return false;
-            }
-            break;
-
-        case 'transferencia':
-            const numeroOperacion = document.getElementById('numeroOperacion').value;
-            const fechaOperacion = document.getElementById('fechaOperacion').value;
-
-            if (!numeroOperacion.match(/^\d{8,10}$/)) {
-                mostrarError('El número de operación debe tener entre 8 y 10 dígitos');
-                return false;
-            }
-            if (!fechaOperacion) {
-                mostrarError('La fecha de operación es requerida');
-                return false;
-            }
-            const fechaSeleccionada = new Date(fechaOperacion);
-            const hoy = new Date();
-            hoy.setHours(0, 0, 0, 0);
-            if (fechaSeleccionada > hoy) {
-                mostrarError('La fecha de operación no puede ser futura');
-                return false;
-            }
-            break;
-
-        case 'efectivo':
-            const fechaPagoEfectivo = document.getElementById('fechaPagoEfectivo').value;
-
-            if (!fechaPagoEfectivo) {
-                mostrarError('La fecha de pago programada es requerida');
-                return false;
-            }
-            const fechaEfectivo = new Date(fechaPagoEfectivo);
-            const hoyEfectivo = new Date();
-            hoyEfectivo.setHours(0, 0, 0, 0);
-            if (fechaEfectivo < hoyEfectivo) {
-                mostrarError('La fecha de pago no puede ser anterior a hoy');
-                return false;
-            }
-            break;
-
-        case 'yape':
-            const numeroOperacionYape = document.getElementById('numeroOperacionYape').value;
-            const telefonoYape = document.getElementById('telefonoYape').value;
-
-            if (!numeroOperacionYape.match(/^\d{8,10}$/)) {
-                mostrarError('El número de operación de Yape/Plin debe tener entre 8 y 10 dígitos');
-                return false;
-            }
-            if (!telefonoYape.match(/^9\d{8}$/)) {
-                mostrarError('El número de teléfono debe tener 9 dígitos y comenzar con 9');
-                return false;
-            }
-            break;
-    }
-
-    return true;
-}
-
-function obtenerDatosMetodoPago() {
-    const datos = {};
-
-    switch (selectedPaymentMethod) {
-        case 'tarjeta':
-
-            const numeroTarjeta = document.getElementById('numeroTarjeta').value.replace(/\s/g, '');
-            if (numeroTarjeta && numeroTarjeta.length >= 4) {
-                datos.numeroTarjetaUltimos4 = numeroTarjeta.slice(-4);
-            }
-
-            const nombreTarjeta = document.getElementById('nombreTarjeta').value;
-            if (nombreTarjeta) {
-                datos.nombreTarjeta = nombreTarjeta.trim();
-            }
-            break;
-
-        case 'transferencia':
-
-            const numOp = document.getElementById('numeroOperacion').value;
-            if (numOp) {
-                datos.numeroOperacion = numOp.trim();
-            }
-
-            datos.banco = 'BCP';
-
-            const fechaOp = document.getElementById('fechaOperacion').value;
-            if (fechaOp) {
-                datos.fechaOperacion = fechaOp;
-            }
-            break;
-
-        case 'efectivo':
-            const fechaEfectivo = document.getElementById('fechaPagoEfectivo').value;
-            if (fechaEfectivo) {
-                datos.fechaPagoEfectivo = fechaEfectivo;
-            }
-            break;
-
-        case 'yape':
-            const numOpYape = document.getElementById('numeroOperacionYape').value;
-            if (numOpYape) {
-                datos.numeroOperacion = numOpYape.trim();
-            }
-
-            const telefono = document.getElementById('telefonoYape').value;
-            if (telefono) {
-                datos.telefonoYape = telefono.trim();
-            }
-            break;
-    }
-
-    console.log('Datos del método de pago:', datos);
-    return datos;
-}
-
-function generarVistaPrevia() {
-    const numeroComprobante = 'CV-' + new Date().getFullYear() + '-' + String(Math.floor(Math.random() * 9999) + 1).padStart(4, '0');
-    document.getElementById('numeroComprobantePreview').textContent = numeroComprobante;
-    document.getElementById('comprobantePreview').style.display = 'block';
-}
-
-function getMetodoLabel(metodo) {
-    switch (metodo) {
-        case 'tarjeta': return 'TARJETA';
-        case 'transferencia': return 'TRANSFERENCIA';
-        case 'efectivo': return 'EFECTIVO';
-        case 'yape': return 'YAPE';
-        default: return metodo?.toUpperCase() || 'DESCONOCIDO';
-    }
-}
-
-function getMetodoLabelDisplay(metodo) {
-    const metodos = {
-        'tarjeta': 'Tarjeta de Crédito/Débito',
-        'transferencia': 'Transferencia Bancaria BCP',
-        'efectivo': 'Pago en Efectivo',
-        'yape': 'Yape/Plin'
-    };
-    return metodos[metodo] || metodo;
-}
-
-function descargarComprobante(pagoId) {
-    const pago = pagoId ? allPagos.find(p => p.id === pagoId) : selectedPayment;
-    if (!pago || pago.estado.toUpperCase() !== 'PAGADO') {
-        mostrarError('No se puede descargar el comprobante');
-        return;
-    }
-
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
-
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(20);
-    doc.setTextColor(220, 20, 60);
-    doc.text('COLEGIO CÉSAR VALLEJO', 20, 30);
-    doc.setFontSize(16);
-    doc.setTextColor(0, 0, 0);
-    doc.text('COMPROBANTE DE PAGO', 20, 45);
-    doc.setLineWidth(1);
-    doc.setDrawColor(255, 215, 0);
-    doc.line(20, 50, 190, 50);
-    doc.setFontSize(12);
-    doc.setFont('helvetica', 'bold');
-    doc.text(`Comprobante N°: ${pago.numeroComprobante}`, 20, 65);
-    doc.text(`Fecha de Pago: ${formatearFecha(pago.fechaPago)}`, 20, 75);
-    doc.text('DATOS DEL ESTUDIANTE:', 20, 95);
-    doc.setFont('helvetica', 'normal');
-    doc.text(`Nombre: ${pago.nombreEstudiante}`, 20, 105);
-    doc.text(`Grado: ${pago.grado}`, 20, 115);
-    doc.setFont('helvetica', 'bold');
-    doc.text('DETALLE DEL PAGO:', 20, 135);
-    doc.setFont('helvetica', 'normal');
-    doc.text(`Concepto: ${pago.concepto}`, 20, 145);
-    doc.text(`Descripción: ${pago.descripcion}`, 20, 155);
-    doc.text(`Método de Pago: ${pago.metodoPago}`, 20, 165);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(14);
-    doc.setTextColor(220, 20, 60);
-    doc.text(`MONTO PAGADO: S/ ${pago.montoTotal.toFixed(2)}`, 20, 185);
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(10);
-    doc.setTextColor(100, 100, 100);
-    doc.text('Este comprobante es válido como constancia de pago.', 20, 220);
-    doc.text('Para consultas contactar a administración: (01) 123-4567', 20, 230);
-    doc.setDrawColor(220, 20, 60);
-    doc.setFillColor(255, 215, 0);
-    doc.rect(150, 180, 30, 30, 'FD');
-    doc.setTextColor(220, 20, 60);
-    doc.setFont('helvetica', 'bold');
-    doc.text('QR', 162, 200);
-    doc.save(`Comprobante_${pago.numeroComprobante}.pdf`);
-    mostrarExito('Comprobante descargado correctamente');
-}
-
-function descargarResumen() {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
-
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(20);
-    doc.setTextColor(220, 20, 60);
-    doc.text('COLEGIO CÉSAR VALLEJO', 20, 30);
-    doc.setFontSize(16);
-    doc.setTextColor(0, 0, 0);
-    doc.text('RESUMEN DE PAGOS', 20, 45);
-    doc.setFontSize(12);
-    doc.setFont('helvetica', 'normal');
-    doc.text(`Fecha del Reporte: ${formatearFecha(new Date().toISOString().split('T')[0])}`, 20, 55);
-    doc.text(`Apoderado: ${currentUser.nombre}`, 20, 65);
-    doc.setLineWidth(1);
-    doc.setDrawColor(255, 215, 0);
-    doc.line(20, 70, 190, 70);
-    const totalDeuda = allPagos
-        .filter(p => ['PENDIENTE', 'VENCIDO', 'PARCIAL'].includes(p.estado))
-        .reduce((sum, p) => sum + (p.montoPendiente || 0), 0);
-    const totalPagado = allPagos
-        .filter(p => p.estado === 'PAGADO')
-        .reduce((sum, p) => sum + (p.montoTotal || 0), 0);
-    const vencidos = allPagos.filter(p => p.estado === 'VENCIDO').length;
-    const pendientes = allPagos.filter(p => p.estado === 'PENDIENTE').length;
-    doc.setFont('helvetica', 'bold');
-    doc.text('RESUMEN ESTADÍSTICO:', 20, 85);
-    doc.setFont('helvetica', 'normal');
-    doc.text(`Total de Deuda Pendiente: S/ ${totalDeuda.toFixed(2)}`, 20, 95);
-    doc.text(`Total Pagado: S/ ${totalPagado.toFixed(2)}`, 20, 105);
-    doc.text(`Pagos Pendientes: ${pendientes}`, 20, 115);
-    doc.text(`Pagos Vencidos: ${vencidos}`, 20, 125);
-    doc.setFont('helvetica', 'bold');
-    doc.text('DETALLE DE PAGOS:', 20, 145);
-    let yPos = 155;
-    allPagos.forEach((pago, index) => {
-        if (yPos > 250) {
-            doc.addPage();
-            yPos = 30;
-        }
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(11);
-        doc.text(`${index + 1}. ${pago.concepto}`, 20, yPos);
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(9);
-        doc.text(`Estado: ${getEstadoLabel(pago.estado)}`, 25, yPos + 8);
-        doc.text(`Monto: S/ ${pago.montoTotal.toFixed(2)}`, 25, yPos + 16);
-        if (pago.montoPendiente > 0) {
-            doc.text(`Pendiente: S/ ${pago.montoPendiente.toFixed(2)}`, 25, yPos + 24);
-        }
-        doc.text(`Vencimiento: ${formatearFecha(pago.fechaVencimiento)}`, 25, yPos + 32);
-        yPos += 45;
-    });
-    doc.save(`Resumen_Pagos_${new Date().toISOString().split('T')[0]}.pdf`);
-    mostrarExito('Resumen descargado correctamente');
-}
-
-async function confirmarPago() {
-    if (!selectedPayment || !selectedPaymentMethod) {
-        mostrarError('Debe seleccionar un pago y método de pago');
-        return;
-    }
-
-    if (!validarCamposEspecificos()) {
-        return;
-    }
-
-    const btn = document.getElementById('btnConfirmarPago');
-    const textoOriginal = btn.innerHTML;
-
-    try {
-        btn.disabled = true;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Procesando...';
-
-        const montoPagado = parseFloat(document.getElementById('montoPago').value) || 0;
-        const metodoPagoLabel = getMetodoLabel(selectedPaymentMethod);
-        const observacionesUsuario = document.getElementById('observacionesPago').value?.trim() || '';
-        const datosPagoExtra = obtenerDatosMetodoPago();
-
-        const datosPago = {
-            montoPagado: montoPagado,
-            metodoPago: metodoPagoLabel,
-            observaciones: observacionesUsuario,
-            procesadoPorId: currentUser?.id || null,
-            ...datosPagoExtra
-        };
-
-        Object.keys(datosPago).forEach(key => {
-            if (datosPago[key] === undefined || datosPago[key] === null || datosPago[key] === '') {
-                delete datosPago[key];
-            }
-        });
-
-        console.log("📦 Payload enviado al backend:", JSON.stringify(datosPago, null, 2));
-
-        const token = localStorage.getItem('token');
-        if (!token) {
-            throw new Error("No hay token de autenticación. Inicie sesión nuevamente.");
-        }
-
-        const response = await fetch(`${API_BASE_URL}/pagos/${selectedPayment.id}/procesar`, {
-            method: 'PATCH',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(datosPago)
-        });
-
-        console.log("📡 Respuesta del servidor - Status:", response.status);
-
-        if (!response.ok) {
-            let errorMsg = `Error HTTP ${response.status}`;
-            try {
-                const errorData = await response.json();
-                console.error("❌ Error en backend:", errorData);
-                errorMsg = errorData.mensaje || errorData.message || errorMsg;
-            } catch (e) {
-                console.error("❌ Error al parsear respuesta:", e);
-            }
-            throw new Error(errorMsg);
-        }
-
-        const resultado = await response.json();
-        console.log("✅ Pago procesado exitosamente:", resultado);
-
-        const modalInstance = bootstrap.Modal.getInstance(document.getElementById('procesarPagoModal'));
-        if (modalInstance) {
-            modalInstance.hide();
-        }
-
-        mostrarExito(`¡Pago procesado correctamente! Monto: S/ ${montoPagado.toFixed(2)}`);
-
-        await new Promise(resolve => setTimeout(resolve, 1000));
-
-        await cargarPagos();
-
-    } catch (error) {
-        console.error('❌ Error al procesar pago:', error);
-        mostrarError('Error al procesar el pago: ' + error.message);
-    } finally {
-        btn.disabled = false;
-        btn.innerHTML = textoOriginal;
-    }
-}
-
-function refrescarPagos() {
-    const btn = event.target;
-    const icon = btn.querySelector('i');
-    icon.classList.add('fa-spin');
-    btn.disabled = true;
-    setTimeout(() => {
-        cargarPagos();
-        icon.classList.remove('fa-spin');
-        btn.disabled = false;
-        mostrarExito('Información actualizada');
-    }, 1000);
-}
-
-function formatearFecha(fecha) {
-    const date = new Date(fecha);
-    return date.toLocaleDateString('es-PE', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-    });
-}
-
-function getEstadoLabel(estado) {
-    const estados = {
-        'PENDIENTE': 'Pendiente',
-        'VENCIDO': 'Vencido',
-        'PAGADO': 'Pagado',
-        'PARCIAL': 'Pago Parcial'
-    };
-    return estados[estado] || estado;
-}
-
-function mostrarError(mensaje) {
-    mostrarNotificacion(mensaje, 'error');
-}
-
-function mostrarExito(mensaje) {
-    mostrarNotificacion(mensaje, 'success');
-}
-
-function mostrarNotificacion(mensaje, tipo) {
-    const alertZone = document.getElementById('alertZone');
-    const alertClass = tipo === 'error' ? 'alert-danger' : 'alert-success';
-    const icon = tipo === 'error' ? 'fas fa-exclamation-circle' : 'fas fa-check-circle';
-
-    const alert = document.createElement('div');
-    alert.className = `alert ${alertClass} alert-dismissible fade show animate__animated animate__bounceIn`;
-    alert.innerHTML = `
-        <i class="${icon} me-2"></i>
-        ${mensaje}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    `;
-
-    alertZone.appendChild(alert);
-
-    setTimeout(() => {
-        if (alert.parentNode) {
-            alert.classList.add('animate__animated', 'animate__fadeOut');
-            setTimeout(() => {
-                if (alert.parentNode) {
-                    alert.remove();
-                }
-            }, 500);
-        }
-    }, 5000);
-
-    mostrarToast(mensaje, tipo);
-}
-
-function mostrarToast(mensaje, tipo) {
-    const toastEl = document.getElementById('notificationToast');
-    const toastMessage = document.getElementById('toastMessage');
-
-    toastMessage.innerHTML = `
-        <i class="${tipo === 'error' ? 'fas fa-exclamation-circle' : 'fas fa-check-circle'} me-2"></i>
-        ${mensaje}
-    `;
-
-    const toast = new bootstrap.Toast(toastEl, {
-        autohide: true,
-        delay: 4000
-    });
-
-    toast.show();
-}
-
-document.addEventListener('DOMContentLoaded', function() {
-    document.addEventListener('input', function(e) {
-        if (e.target.id === 'montoPago') {
-            const monto = parseFloat(e.target.value);
-            const btn = document.getElementById('btnConfirmarPago');
-
-            if (monto > 0 && monto <= selectedPayment?.montoPendiente && selectedPaymentMethod) {
-                btn.disabled = false;
-            } else {
-                btn.disabled = true;
-            }
-        }
-    });
-
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') {
-            const modals = document.querySelectorAll('.modal.show');
-            modals.forEach(modal => {
-                bootstrap.Modal.getInstance(modal)?.hide();
-            });
-        }
-    });
-});
+        const API_BASE_URL = `${window.location.origin}/api`;
+      let currentUser = null;
+      let allPagos = [];
+      let filteredPagos = [];
+      let currentFilter = 'todos';
+      let selectedPayment = null;
+      let selectedPaymentMethod = null;
+
+      document.addEventListener('DOMContentLoaded', function() {
+          verificarAutenticacion();
+      });
+
+      function verificarAutenticacion() {
+          const token = localStorage.getItem('token');
+          const usuario = localStorage.getItem('usuario');
+
+          if (!token || !usuario) {
+              window.location.href = 'login.html';
+              return;
+          }
+
+          try {
+              currentUser = JSON.parse(usuario);
+
+              if (currentUser.rol !== 'PADRE') {
+                  window.location.href = 'login.html';
+                  return;
+              }
+
+              document.getElementById('userName').textContent = currentUser.nombre;
+              cargarPagos();
+
+          } catch (error) {
+              console.error('Error al verificar autenticación:', error);
+              cerrarSesion();
+          }
+      }
+
+      function cerrarSesion() {
+          if (confirm('¿Está seguro que desea cerrar sesión?')) {
+              localStorage.removeItem('token');
+              localStorage.removeItem('usuario');
+              window.location.href = 'login.html';
+          }
+      }
+
+      async function cargarPagos() {
+          try {
+              document.getElementById('loading').style.display = 'block';
+              document.getElementById('pagosContent').style.display = 'none';
+
+              const response = await fetch(`${API_BASE_URL}/pagos/apoderado/${currentUser.id}`, {
+                  headers: {
+                      'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                      'Content-Type': 'application/json'
+                  }
+              });
+
+              if (response.ok) {
+                  allPagos = await response.json();
+                  console.log('Pagos cargados:', allPagos);
+                  filteredPagos = allPagos;
+                  mostrarPagos();
+                  mostrarResumen();
+              } else if (response.status === 404 || response.status === 204) {
+                  allPagos = [];
+                  filteredPagos = [];
+                  mostrarPagos();
+                  mostrarResumen();
+              } else {
+                  throw new Error('Error al cargar pagos');
+              }
+
+          } catch (error) {
+              console.error('Error:', error);
+              mostrarError('Error al cargar la información de pagos. Intente nuevamente.');
+              allPagos = [];
+              filteredPagos = [];
+              mostrarPagos();
+              mostrarResumen();
+          } finally {
+              document.getElementById('loading').style.display = 'none';
+              document.getElementById('pagosContent').style.display = 'block';
+          }
+      }
+
+      function mostrarResumen() {
+          const container = document.getElementById('summaryContainer');
+
+          const totalDeuda = allPagos
+              .filter(p => ['PENDIENTE', 'VENCIDO', 'PARCIAL'].includes(p.estado))
+              .reduce((sum, p) => sum + (p.montoPendiente || 0), 0);
+
+          const totalPagado = allPagos
+              .filter(p => p.estado === 'PAGADO')
+              .reduce((sum, p) => sum + (p.montoTotal || 0), 0);
+
+          const vencidos = allPagos.filter(p => p.estado === 'VENCIDO').length;
+          const pendientes = allPagos.filter(p => p.estado === 'PENDIENTE').length;
+
+          const stats = [
+              {
+                  icon: 'fas fa-exclamation-triangle',
+                  amount: `S/ ${totalDeuda.toFixed(2)}`,
+                  label: 'Deuda Total',
+                  color: 'danger'
+              },
+              {
+                  icon: 'fas fa-check-circle',
+                  amount: `S/ ${totalPagado.toFixed(2)}`,
+                  label: 'Total Pagado',
+                  color: 'success'
+              },
+              {
+                  icon: 'fas fa-clock',
+                  amount: pendientes,
+                  label: 'Pagos Pendientes',
+                  color: 'warning'
+              },
+              {
+                  icon: 'fas fa-exclamation-circle',
+                  amount: vencidos,
+                  label: 'Pagos Vencidos',
+                  color: 'danger'
+              }
+          ];
+
+          container.innerHTML = stats.map(stat => `
+              <div class="col-md-3 col-sm-6 mb-3">
+                  <div class="summary-card animate__animated animate__bounceIn">
+                      <div class="summary-icon">
+                          <i class="${stat.icon}"></i>
+                      </div>
+                      <div class="summary-amount">${stat.amount}</div>
+                      <div class="summary-label">${stat.label}</div>
+                  </div>
+              </div>
+          `).join('');
+      }
+
+      function mostrarPagos() {
+          const container = document.getElementById('pagosContainer');
+
+          if (filteredPagos.length === 0) {
+              container.innerHTML = `
+                  <div class="text-center p-5">
+                      <i class="fas fa-receipt fa-3x mb-3" style="color: var(--institutional-yellow);"></i>
+                      <h5 style="color: var(--institutional-red);">No hay pagos para mostrar</h5>
+                      <p class="text-muted">No se encontraron pagos con los filtros aplicados.</p>
+                  </div>
+              `;
+              return;
+          }
+
+          container.innerHTML = filteredPagos.map(pago => `
+              <div class="pago-card pago-${pago.estado.toLowerCase()} animate__animated animate__fadeInUp">
+                  <div class="d-flex justify-content-between align-items-start mb-3">
+                      <div class="flex-grow-1">
+                          <h5 class="mb-2" style="color: var(--institutional-red); font-weight: 700;">
+                              <i class="fas fa-file-invoice me-2"></i>${pago.concepto}
+                          </h5>
+                          <div class="row">
+                              <div class="col-md-6">
+                                  <p class="mb-1"><strong>Estudiante:</strong> ${pago.nombreEstudiante || 'N/A'}</p>
+                                  <p class="mb-1"><strong>Grado:</strong> ${pago.grado || 'N/A'}</p>
+                                  <p class="mb-1"><strong>Descripción:</strong> ${pago.descripcion || 'N/A'}</p>
+                              </div>
+                              <div class="col-md-6">
+                                  <p class="mb-1"><strong>Monto Total:</strong> S/ ${pago.montoTotal.toFixed(2)}</p>
+                                  ${pago.montoPendiente > 0 ? `<p class="mb-1"><strong>Pendiente:</strong> S/ ${pago.montoPendiente.toFixed(2)}</p>` : ''}
+                                  <p class="mb-1"><strong>Vencimiento:</strong> ${formatearFecha(pago.fechaVencimiento)}</p>
+                                  ${pago.fechaPago ? `<p class="mb-1"><strong>Fecha de Pago:</strong> ${formatearFecha(pago.fechaPago)}</p>` : ''}
+                                  ${pago.metodoPago ? `<p class="mb-1"><strong>Método:</strong> ${pago.metodoPago}</p>` : ''}
+                              </div>
+                          </div>
+                      </div>
+                      <div class="d-flex flex-column align-items-end">
+                          <span class="status-badge badge-${pago.estado.toLowerCase()} mb-2">
+                              ${getEstadoLabel(pago.estado)}
+                          </span>
+                          <div class="d-flex gap-2">
+                              <button class="btn btn-sm btn-outline-primary" onclick="verDetalles(${pago.id})">
+                                  <i class="fas fa-eye"></i>
+                              </button>
+                              ${pago.estado !== 'PAGADO' ? `
+                                  <button class="btn btn-sm btn-success" onclick="procesarPago(${pago.id})">
+                                      <i class="fas fa-credit-card"></i> Pagar
+                                  </button>
+                              ` : `
+                                  <button class="btn btn-sm btn-info" onclick="descargarComprobante(${pago.id})">
+                                      <i class="fas fa-download"></i>
+                                  </button>
+                              `}
+                          </div>
+                      </div>
+                  </div>
+
+                  ${pago.estado === 'PARCIAL' ? `
+                      <div class="mt-3">
+                          <div class="d-flex justify-content-between mb-2">
+                              <small>Progreso del Pago</small>
+                              <small>${((pago.montoTotal - pago.montoPendiente) / pago.montoTotal * 100).toFixed(1)}%</small>
+                          </div>
+                          <div class="progress">
+                              <div class="progress-bar" style="width: ${(pago.montoTotal - pago.montoPendiente) / pago.montoTotal * 100}%"></div>
+                          </div>
+                      </div>
+                  ` : ''}
+              </div>
+          `).join('');
+      }
+
+      function filtrarPagos(filtro) {
+          currentFilter = filtro;
+
+          document.querySelectorAll('.filter-tab').forEach(tab => {
+              tab.classList.remove('active');
+          });
+          document.querySelector(`[data-filter="${filtro}"]`).classList.add('active');
+
+          switch (filtro) {
+              case 'pendientes':
+                  filteredPagos = allPagos.filter(p => p.estado === 'PENDIENTE');
+                  break;
+              case 'vencidos':
+                  filteredPagos = allPagos.filter(p => p.estado === 'VENCIDO');
+                  break;
+              case 'pagados':
+                  filteredPagos = allPagos.filter(p => p.estado === 'PAGADO');
+                  break;
+              default:
+                  filteredPagos = allPagos;
+          }
+
+          mostrarPagos();
+      }
+
+      function verDetalles(pagoId) {
+          const pago = allPagos.find(p => p.id === pagoId);
+          if (!pago) return;
+
+          const contenido = `
+              <div class="row">
+                  <div class="col-md-6">
+                      <h6 style="color: var(--institutional-red);">
+                          <i class="fas fa-info-circle me-2"></i>Información General
+                      </h6>
+                      <table class="table table-borderless">
+                          <tr><td><strong>ID:</strong></td><td>${pago.id}</td></tr>
+                          <tr><td><strong>Concepto:</strong></td><td>${pago.concepto}</td></tr>
+                          <tr><td><strong>Estudiante:</strong></td><td>${pago.nombreEstudiante || 'N/A'}</td></tr>
+                          <tr><td><strong>Grado:</strong></td><td>${pago.grado || 'N/A'}</td></tr>
+                          <tr><td><strong>Descripción:</strong></td><td>${pago.descripcion || 'N/A'}</td></tr>
+                      </table>
+                  </div>
+                  <div class="col-md-6">
+                      <h6 style="color: var(--institutional-red);">
+                          <i class="fas fa-money-bill me-2"></i>Información Financiera
+                      </h6>
+                      <table class="table table-borderless">
+                          <tr><td><strong>Monto Total:</strong></td><td>S/ ${pago.montoTotal.toFixed(2)}</td></tr>
+                          <tr><td><strong>Monto Pendiente:</strong></td><td>S/ ${pago.montoPendiente.toFixed(2)}</td></tr>
+                          <tr><td><strong>Estado:</strong></td><td><span class="status-badge badge-${pago.estado.toLowerCase()}">${getEstadoLabel(pago.estado)}</span></td></tr>
+                          <tr><td><strong>Fecha Vencimiento:</strong></td><td>${formatearFecha(pago.fechaVencimiento)}</td></tr>
+                          ${pago.fechaPago ? `<tr><td><strong>Fecha de Pago:</strong></td><td>${formatearFecha(pago.fechaPago)}</td></tr>` : ''}
+                          ${pago.metodoPago ? `<tr><td><strong>Método de Pago:</strong></td><td>${pago.metodoPago}</td></tr>` : ''}
+                          ${pago.numeroComprobante ? `<tr><td><strong>N° Comprobante:</strong></td><td>${pago.numeroComprobante}</td></tr>` : ''}
+                      </table>
+                  </div>
+              </div>
+          `;
+
+          document.getElementById('detallesPagoContent').innerHTML = contenido;
+          new bootstrap.Modal(document.getElementById('detallesPagoModal')).show();
+      }
+
+      function procesarPago(pagoId) {
+          selectedPayment = allPagos.find(p => p.id === pagoId);
+          if (!selectedPayment) return;
+
+          const infoPago = `
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                  <h6 class="mb-0">${selectedPayment.concepto}</h6>
+                  <span class="status-badge badge-${selectedPayment.estado.toLowerCase()}">
+                      ${getEstadoLabel(selectedPayment.estado)}
+                  </span>
+              </div>
+              <p class="mb-2"><strong>Estudiante:</strong> ${selectedPayment.nombreEstudiante || 'N/A'}</p>
+              <p class="mb-2"><strong>Monto Pendiente:</strong> <span style="font-size: 1.2em; font-weight: bold; color: var(--institutional-red);">S/ ${selectedPayment.montoPendiente.toFixed(2)}</span></p>
+              <p class="mb-2"><strong>Vencimiento:</strong> ${formatearFecha(selectedPayment.fechaVencimiento)}</p>
+          `;
+
+          document.getElementById('infoPagoContent').innerHTML = infoPago;
+          document.getElementById('montoPago').value = selectedPayment.montoPendiente.toFixed(2);
+          document.getElementById('montoPago').max = selectedPayment.montoPendiente.toFixed(2);
+
+          document.getElementById('formularioPago').style.display = 'none';
+          document.getElementById('camposEspecificos').innerHTML = '';
+          document.getElementById('metodoPago').value = '';
+          document.getElementById('comprobantePreview').style.display = 'none';
+          document.getElementById('btnConfirmarPago').disabled = true;
+
+          document.querySelectorAll('.payment-method').forEach(method => {
+              method.classList.remove('selected');
+          });
+
+          selectedPaymentMethod = null;
+
+          new bootstrap.Modal(document.getElementById('procesarPagoModal')).show();
+      }
+
+      function seleccionarMetodoPago(metodo) {
+          document.querySelectorAll('.payment-method').forEach(method => {
+              method.classList.remove('selected');
+          });
+
+          event.target.closest('.payment-method').classList.add('selected');
+          selectedPaymentMethod = metodo;
+
+          document.getElementById('metodoPago').value = getMetodoLabelDisplay(metodo);
+          document.getElementById('formularioPago').style.display = 'block';
+
+          mostrarCamposEspecificos(metodo);
+          generarVistaPrevia();
+      }
+
+      function mostrarCamposEspecificos(metodo) {
+          const container = document.getElementById('camposEspecificos');
+          let campos = '';
+
+          switch (metodo) {
+              case 'tarjeta':
+                  campos = `
+                      <div class="row">
+                          <div class="col-md-6 mb-3">
+                              <label for="numeroTarjeta" class="form-label">Número de Tarjeta * (Visa/Mastercard)</label>
+                              <input type="text" class="form-control" id="numeroTarjeta" placeholder="**** **** **** ****" maxlength="19" required>
+                          </div>
+                          <div class="col-md-3 mb-3">
+                              <label for="fechaExpiracion" class="form-label">Fecha Exp. * (MM/AA)</label>
+                              <input type="text" class="form-control" id="fechaExpiracion" placeholder="MM/AA" maxlength="5" required>
+                          </div>
+                          <div class="col-md-3 mb-3">
+                              <label for="cvv" class="form-label">CVV *</label>
+                              <input type="text" class="form-control" id="cvv" placeholder="123" maxlength="4" required>
+                          </div>
+                          <div class="col-md-12 mb-3">
+                              <label for="nombreTarjeta" class="form-label">Nombre del Titular *</label>
+                              <input type="text" class="form-control" id="nombreTarjeta" placeholder="Como aparece en la tarjeta" required>
+                          </div>
+                      </div>
+                  `;
+                  break;
+
+              case 'transferencia':
+                  campos = `
+                      <div class="alert alert-info">
+                          <h6><i class="fas fa-university me-2"></i>Datos para Transferencia (BCP)</h6>
+                          <p class="mb-1"><strong>Banco:</strong> BCP - Banco de Crédito del Perú</p>
+                          <p class="mb-1"><strong>Cuenta Corriente:</strong> 194-2158749-0-32</p>
+                          <p class="mb-1"><strong>CCI:</strong> 002-194-002158749032-15</p>
+                          <p class="mb-1"><strong>Titular:</strong> Colegio César Vallejo S.A.C.</p>
+                      </div>
+                      <div class="mb-3">
+                          <label for="numeroOperacion" class="form-label">Número de Operación * (8-10 dígitos)</label>
+                          <input type="text" class="form-control" id="numeroOperacion" placeholder="Ej: 1234567890" maxlength="10" required>
+                      </div>
+                      <div class="mb-3">
+                          <label for="fechaOperacion" class="form-label">Fecha de Operación *</label>
+                          <input type="date" class="form-control" id="fechaOperacion" required>
+                      </div>
+                  `;
+                  break;
+
+              case 'efectivo':
+                  campos = `
+                      <div class="alert alert-warning">
+                          <h6><i class="fas fa-money-bill me-2"></i>Pago en Efectivo</h6>
+                          <p class="mb-0">El pago en efectivo debe realizarse en la oficina de administración del colegio en horario de 8:00 AM a 4:00 PM.</p>
+                      </div>
+                      <div class="mb-3">
+                          <label for="fechaPagoEfectivo" class="form-label">Fecha de Pago Programada *</label>
+                          <input type="date" class="form-control" id="fechaPagoEfectivo" required>
+                      </div>
+                  `;
+                  break;
+
+              case 'yape':
+                  campos = `
+                      <div class="text-center mb-3">
+                          <div class="qr-code mx-auto mb-3">
+                              <i class="fas fa-qrcode fa-3x text-white"></i>
+                          </div>
+                          <p><strong>Escanea el código QR con tu app de Yape o Plin</strong></p>
+                          <p class="text-muted">Número: 987 654 321</p>
+                      </div>
+                      <div class="mb-3">
+                          <label for="numeroOperacionYape" class="form-label">Número de Operación * (8-10 dígitos)</label>
+                          <input type="text" class="form-control" id="numeroOperacionYape" placeholder="Ej: 1234567890" maxlength="10" required>
+                      </div>
+                      <div class="mb-3">
+                          <label for="telefonoYape" class="form-label">Número de Teléfono * (9 dígitos)</label>
+                          <input type="text" class="form-control" id="telefonoYape" placeholder="Ej: 987654321" maxlength="9" required>
+                      </div>
+                  `;
+                  break;
+          }
+
+          container.innerHTML = campos;
+          document.getElementById('btnConfirmarPago').disabled = false;
+          agregarValidaciones(metodo);
+      }
+
+      function agregarValidaciones(metodo) {
+          switch (metodo) {
+              case 'tarjeta':
+                  const numeroTarjeta = document.getElementById('numeroTarjeta');
+                  numeroTarjeta.addEventListener('input', function(e) {
+                      let value = e.target.value.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
+                      let formattedValue = value.match(/.{1,4}/g)?.join(' ') || value;
+                      e.target.value = formattedValue;
+                  });
+
+                  const fechaExp = document.getElementById('fechaExpiracion');
+                  fechaExp.addEventListener('input', function(e) {
+                      let value = e.target.value.replace(/\D/g, '');
+                      if (value.length >= 2) {
+                          value = value.substring(0, 2) + '/' + value.substring(2, 4);
+                      }
+                      e.target.value = value;
+                  });
+
+                  const cvv = document.getElementById('cvv');
+                  cvv.addEventListener('input', function(e) {
+                      e.target.value = e.target.value.replace(/[^0-9]/g, '');
+                  });
+                  break;
+
+              case 'transferencia':
+              case 'yape':
+                  const numeroOperacion = document.getElementById(metodo === 'transferencia' ? 'numeroOperacion' : 'numeroOperacionYape');
+                  numeroOperacion.addEventListener('input', function(e) {
+                      e.target.value = e.target.value.replace(/[^0-9]/g, '');
+                  });
+
+                  if (metodo === 'yape') {
+                      const telefonoYape = document.getElementById('telefonoYape');
+                      telefonoYape.addEventListener('input', function(e) {
+                          e.target.value = e.target.value.replace(/[^0-9]/g, '');
+                      });
+                  }
+                  break;
+          }
+      }
+
+      function validarCamposEspecificos() {
+          const montoPago = parseFloat(document.getElementById('montoPago').value);
+          if (isNaN(montoPago) || montoPago <= 0 || montoPago > selectedPayment.montoPendiente) {
+              mostrarError('El monto ingresado no es válido');
+              return false;
+          }
+
+          switch (selectedPaymentMethod) {
+              case 'tarjeta':
+                  const numeroTarjeta = document.getElementById('numeroTarjeta').value.replace(/\s/g, '');
+                  const fechaExp = document.getElementById('fechaExpiracion').value;
+                  const cvv = document.getElementById('cvv').value;
+                  const nombreTarjeta = document.getElementById('nombreTarjeta').value;
+
+                  if (numeroTarjeta.length !== 16) {
+                      mostrarError('El número de tarjeta debe tener 16 dígitos');
+                      return false;
+                  }
+                  if (!fechaExp.match(/^(0[1-9]|1[0-2])\/[0-9]{2}$/)) {
+                      mostrarError('Fecha de expiración inválida (MM/AA)');
+                      return false;
+                  }
+                  const [mes, anio] = fechaExp.split('/');
+                  const fechaActual = new Date();
+                  const anioActual = fechaActual.getFullYear() % 100;
+                  const mesActual = fechaActual.getMonth() + 1;
+                  if (parseInt(anio) < anioActual || (parseInt(anio) === anioActual && parseInt(mes) < mesActual)) {
+                      mostrarError('La tarjeta está expirada');
+                      return false;
+                  }
+                  if (cvv.length < 3 || cvv.length > 4) {
+                      mostrarError('El CVV debe tener 3 o 4 dígitos');
+                      return false;
+                  }
+                  if (!nombreTarjeta.trim()) {
+                      mostrarError('El nombre del titular es requerido');
+                      return false;
+                  }
+                  break;
+
+              case 'transferencia':
+                  const numeroOperacion = document.getElementById('numeroOperacion').value;
+                  const fechaOperacion = document.getElementById('fechaOperacion').value;
+
+                  if (!numeroOperacion.match(/^\d{8,10}$/)) {
+                      mostrarError('El número de operación debe tener entre 8 y 10 dígitos');
+                      return false;
+                  }
+                  if (!fechaOperacion) {
+                      mostrarError('La fecha de operación es requerida');
+                      return false;
+                  }
+                  const fechaSeleccionada = new Date(fechaOperacion);
+                  const hoy = new Date();
+                  hoy.setHours(0, 0, 0, 0);
+                  if (fechaSeleccionada > hoy) {
+                      mostrarError('La fecha de operación no puede ser futura');
+                      return false;
+                  }
+                  break;
+
+              case 'efectivo':
+                  const fechaPagoEfectivo = document.getElementById('fechaPagoEfectivo').value;
+
+                  if (!fechaPagoEfectivo) {
+                      mostrarError('La fecha de pago programada es requerida');
+                      return false;
+                  }
+                  const fechaEfectivo = new Date(fechaPagoEfectivo);
+                  const hoyEfectivo = new Date();
+                  hoyEfectivo.setHours(0, 0, 0, 0);
+                  if (fechaEfectivo < hoyEfectivo) {
+                      mostrarError('La fecha de pago no puede ser anterior a hoy');
+                      return false;
+                  }
+                  break;
+
+              case 'yape':
+                  const numeroOperacionYape = document.getElementById('numeroOperacionYape').value;
+                  const telefonoYape = document.getElementById('telefonoYape').value;
+
+                  if (!numeroOperacionYape.match(/^\d{8,10}$/)) {
+                      mostrarError('El número de operación de Yape/Plin debe tener entre 8 y 10 dígitos');
+                      return false;
+                  }
+                  if (!telefonoYape.match(/^9\d{8}$/)) {
+                      mostrarError('El número de teléfono debe tener 9 dígitos y comenzar con 9');
+                      return false;
+                  }
+                  break;
+          }
+
+          return true;
+      }
+
+      function obtenerDatosMetodoPago() {
+          const datos = {};
+
+          switch (selectedPaymentMethod) {
+              case 'tarjeta':
+
+                  const numeroTarjeta = document.getElementById('numeroTarjeta').value.replace(/\s/g, '');
+                  if (numeroTarjeta && numeroTarjeta.length >= 4) {
+                      datos.numeroTarjetaUltimos4 = numeroTarjeta.slice(-4);
+                  }
+
+                  const nombreTarjeta = document.getElementById('nombreTarjeta').value;
+                  if (nombreTarjeta) {
+                      datos.nombreTarjeta = nombreTarjeta.trim();
+                  }
+                  break;
+
+              case 'transferencia':
+
+                  const numOp = document.getElementById('numeroOperacion').value;
+                  if (numOp) {
+                      datos.numeroOperacion = numOp.trim();
+                  }
+
+                  datos.banco = 'BCP';
+
+                  const fechaOp = document.getElementById('fechaOperacion').value;
+                  if (fechaOp) {
+                      datos.fechaOperacion = fechaOp;
+                  }
+                  break;
+
+              case 'efectivo':
+                  const fechaEfectivo = document.getElementById('fechaPagoEfectivo').value;
+                  if (fechaEfectivo) {
+                      datos.fechaPagoEfectivo = fechaEfectivo;
+                  }
+                  break;
+
+              case 'yape':
+                  const numOpYape = document.getElementById('numeroOperacionYape').value;
+                  if (numOpYape) {
+                      datos.numeroOperacion = numOpYape.trim();
+                  }
+
+                  const telefono = document.getElementById('telefonoYape').value;
+                  if (telefono) {
+                      datos.telefonoYape = telefono.trim();
+                  }
+                  break;
+          }
+
+          console.log('Datos del método de pago:', datos);
+          return datos;
+      }
+
+      function generarVistaPrevia() {
+          const numeroComprobante = 'CV-' + new Date().getFullYear() + '-' + String(Math.floor(Math.random() * 9999) + 1).padStart(4, '0');
+          document.getElementById('numeroComprobantePreview').textContent = numeroComprobante;
+          document.getElementById('comprobantePreview').style.display = 'block';
+      }
+
+      function getMetodoLabel(metodo) {
+          switch (metodo) {
+              case 'tarjeta': return 'TARJETA';
+              case 'transferencia': return 'TRANSFERENCIA';
+              case 'efectivo': return 'EFECTIVO';
+              case 'yape': return 'YAPE';
+              default: return metodo?.toUpperCase() || 'DESCONOCIDO';
+          }
+      }
+
+      function getMetodoLabelDisplay(metodo) {
+          const metodos = {
+              'tarjeta': 'Tarjeta de Crédito/Débito',
+              'transferencia': 'Transferencia Bancaria BCP',
+              'efectivo': 'Pago en Efectivo',
+              'yape': 'Yape/Plin'
+          };
+          return metodos[metodo] || metodo;
+      }
+
+      function descargarComprobante(pagoId) {
+          const pago = pagoId ? allPagos.find(p => p.id === pagoId) : selectedPayment;
+          if (!pago || pago.estado.toUpperCase() !== 'PAGADO') {
+              mostrarError('No se puede descargar el comprobante');
+              return;
+          }
+
+          const { jsPDF } = window.jspdf;
+          const doc = new jsPDF();
+
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(20);
+          doc.setTextColor(220, 20, 60);
+          doc.text('COLEGIO CÉSAR VALLEJO', 20, 30);
+          doc.setFontSize(16);
+          doc.setTextColor(0, 0, 0);
+          doc.text('COMPROBANTE DE PAGO', 20, 45);
+          doc.setLineWidth(1);
+          doc.setDrawColor(255, 215, 0);
+          doc.line(20, 50, 190, 50);
+          doc.setFontSize(12);
+          doc.setFont('helvetica', 'bold');
+          doc.text(`Comprobante N°: ${pago.numeroComprobante}`, 20, 65);
+          doc.text(`Fecha de Pago: ${formatearFecha(pago.fechaPago)}`, 20, 75);
+          doc.text('DATOS DEL ESTUDIANTE:', 20, 95);
+          doc.setFont('helvetica', 'normal');
+          doc.text(`Nombre: ${pago.nombreEstudiante}`, 20, 105);
+          doc.text(`Grado: ${pago.grado}`, 20, 115);
+          doc.setFont('helvetica', 'bold');
+          doc.text('DETALLE DEL PAGO:', 20, 135);
+          doc.setFont('helvetica', 'normal');
+          doc.text(`Concepto: ${pago.concepto}`, 20, 145);
+          doc.text(`Descripción: ${pago.descripcion}`, 20, 155);
+          doc.text(`Método de Pago: ${pago.metodoPago}`, 20, 165);
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(14);
+          doc.setTextColor(220, 20, 60);
+          doc.text(`MONTO PAGADO: S/ ${pago.montoTotal.toFixed(2)}`, 20, 185);
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(10);
+          doc.setTextColor(100, 100, 100);
+          doc.text('Este comprobante es válido como constancia de pago.', 20, 220);
+          doc.text('Para consultas contactar a administración: (01) 123-4567', 20, 230);
+          doc.setDrawColor(220, 20, 60);
+          doc.setFillColor(255, 215, 0);
+          doc.rect(150, 180, 30, 30, 'FD');
+          doc.setTextColor(220, 20, 60);
+          doc.setFont('helvetica', 'bold');
+          doc.text('QR', 162, 200);
+          doc.save(`Comprobante_${pago.numeroComprobante}.pdf`);
+          mostrarExito('Comprobante descargado correctamente');
+      }
+
+      function descargarResumen() {
+          const { jsPDF } = window.jspdf;
+          const doc = new jsPDF();
+
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(20);
+          doc.setTextColor(220, 20, 60);
+          doc.text('COLEGIO CÉSAR VALLEJO', 20, 30);
+          doc.setFontSize(16);
+          doc.setTextColor(0, 0, 0);
+          doc.text('RESUMEN DE PAGOS', 20, 45);
+          doc.setFontSize(12);
+          doc.setFont('helvetica', 'normal');
+          doc.text(`Fecha del Reporte: ${formatearFecha(new Date().toISOString().split('T')[0])}`, 20, 55);
+          doc.text(`Apoderado: ${currentUser.nombre}`, 20, 65);
+          doc.setLineWidth(1);
+          doc.setDrawColor(255, 215, 0);
+          doc.line(20, 70, 190, 70);
+          const totalDeuda = allPagos
+              .filter(p => ['PENDIENTE', 'VENCIDO', 'PARCIAL'].includes(p.estado))
+              .reduce((sum, p) => sum + (p.montoPendiente || 0), 0);
+          const totalPagado = allPagos
+              .filter(p => p.estado === 'PAGADO')
+              .reduce((sum, p) => sum + (p.montoTotal || 0), 0);
+          const vencidos = allPagos.filter(p => p.estado === 'VENCIDO').length;
+          const pendientes = allPagos.filter(p => p.estado === 'PENDIENTE').length;
+          doc.setFont('helvetica', 'bold');
+          doc.text('RESUMEN ESTADÍSTICO:', 20, 85);
+          doc.setFont('helvetica', 'normal');
+          doc.text(`Total de Deuda Pendiente: S/ ${totalDeuda.toFixed(2)}`, 20, 95);
+          doc.text(`Total Pagado: S/ ${totalPagado.toFixed(2)}`, 20, 105);
+          doc.text(`Pagos Pendientes: ${pendientes}`, 20, 115);
+          doc.text(`Pagos Vencidos: ${vencidos}`, 20, 125);
+          doc.setFont('helvetica', 'bold');
+          doc.text('DETALLE DE PAGOS:', 20, 145);
+          let yPos = 155;
+          allPagos.forEach((pago, index) => {
+              if (yPos > 250) {
+                  doc.addPage();
+                  yPos = 30;
+              }
+              doc.setFont('helvetica', 'bold');
+              doc.setFontSize(11);
+              doc.text(`${index + 1}. ${pago.concepto}`, 20, yPos);
+              doc.setFont('helvetica', 'normal');
+              doc.setFontSize(9);
+              doc.text(`Estado: ${getEstadoLabel(pago.estado)}`, 25, yPos + 8);
+              doc.text(`Monto: S/ ${pago.montoTotal.toFixed(2)}`, 25, yPos + 16);
+              if (pago.montoPendiente > 0) {
+                  doc.text(`Pendiente: S/ ${pago.montoPendiente.toFixed(2)}`, 25, yPos + 24);
+              }
+              doc.text(`Vencimiento: ${formatearFecha(pago.fechaVencimiento)}`, 25, yPos + 32);
+              yPos += 45;
+          });
+          doc.save(`Resumen_Pagos_${new Date().toISOString().split('T')[0]}.pdf`);
+          mostrarExito('Resumen descargado correctamente');
+      }
+
+      async function confirmarPago() {
+          if (!selectedPayment || !selectedPaymentMethod) {
+              mostrarError('Debe seleccionar un pago y método de pago');
+              return;
+          }
+
+          if (!validarCamposEspecificos()) {
+              return;
+          }
+
+          const btn = document.getElementById('btnConfirmarPago');
+          const textoOriginal = btn.innerHTML;
+
+          try {
+              btn.disabled = true;
+              btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Procesando...';
+
+              const montoPagado = parseFloat(document.getElementById('montoPago').value) || 0;
+              const metodoPagoLabel = getMetodoLabel(selectedPaymentMethod);
+              const observacionesUsuario = document.getElementById('observacionesPago').value?.trim() || '';
+              const datosPagoExtra = obtenerDatosMetodoPago();
+
+              const datosPago = {
+                  montoPagado: montoPagado,
+                  metodoPago: metodoPagoLabel,
+                  observaciones: observacionesUsuario,
+                  procesadoPorId: currentUser?.id || null,
+                  ...datosPagoExtra
+              };
+
+              Object.keys(datosPago).forEach(key => {
+                  if (datosPago[key] === undefined || datosPago[key] === null || datosPago[key] === '') {
+                      delete datosPago[key];
+                  }
+              });
+
+              console.log("📦 Payload enviado al backend:", JSON.stringify(datosPago, null, 2));
+
+              const token = localStorage.getItem('token');
+              if (!token) {
+                  throw new Error("No hay token de autenticación. Inicie sesión nuevamente.");
+              }
+
+              const response = await fetch(`${API_BASE_URL}/pagos/${selectedPayment.id}/procesar`, {
+                  method: 'PATCH',
+                  headers: {
+                      'Authorization': `Bearer ${token}`,
+                      'Content-Type': 'application/json'
+                  },
+                  body: JSON.stringify(datosPago)
+              });
+
+              console.log("📡 Respuesta del servidor - Status:", response.status);
+
+              if (!response.ok) {
+                  let errorMsg = `Error HTTP ${response.status}`;
+                  try {
+                      const errorData = await response.json();
+                      console.error("❌ Error en backend:", errorData);
+                      errorMsg = errorData.mensaje || errorData.message || errorMsg;
+                  } catch (e) {
+                      console.error("❌ Error al parsear respuesta:", e);
+                  }
+                  throw new Error(errorMsg);
+              }
+
+              const resultado = await response.json();
+              console.log("✅ Pago procesado exitosamente:", resultado);
+
+              const modalInstance = bootstrap.Modal.getInstance(document.getElementById('procesarPagoModal'));
+              if (modalInstance) {
+                  modalInstance.hide();
+              }
+
+              mostrarExito(`¡Pago procesado correctamente! Monto: S/ ${montoPagado.toFixed(2)}`);
+
+              await new Promise(resolve => setTimeout(resolve, 1000));
+
+              await cargarPagos();
+
+          } catch (error) {
+              console.error('❌ Error al procesar pago:', error);
+              mostrarError('Error al procesar el pago: ' + error.message);
+          } finally {
+              btn.disabled = false;
+              btn.innerHTML = textoOriginal;
+          }
+      }
+
+      function refrescarPagos() {
+          const btn = event.target;
+          const icon = btn.querySelector('i');
+          icon.classList.add('fa-spin');
+          btn.disabled = true;
+          setTimeout(() => {
+              cargarPagos();
+              icon.classList.remove('fa-spin');
+              btn.disabled = false;
+              mostrarExito('Información actualizada');
+          }, 1000);
+      }
+
+      function formatearFecha(fecha) {
+          const date = new Date(fecha);
+          return date.toLocaleDateString('es-PE', {
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric'
+          });
+      }
+
+      function getEstadoLabel(estado) {
+          const estados = {
+              'PENDIENTE': 'Pendiente',
+              'VENCIDO': 'Vencido',
+              'PAGADO': 'Pagado',
+              'PARCIAL': 'Pago Parcial'
+          };
+          return estados[estado] || estado;
+      }
+
+      function mostrarError(mensaje) {
+          mostrarNotificacion(mensaje, 'error');
+      }
+
+      function mostrarExito(mensaje) {
+          mostrarNotificacion(mensaje, 'success');
+      }
+
+      function mostrarNotificacion(mensaje, tipo) {
+          const alertZone = document.getElementById('alertZone');
+          const alertClass = tipo === 'error' ? 'alert-danger' : 'alert-success';
+          const icon = tipo === 'error' ? 'fas fa-exclamation-circle' : 'fas fa-check-circle';
+
+          const alert = document.createElement('div');
+          alert.className = `alert ${alertClass} alert-dismissible fade show animate__animated animate__bounceIn`;
+          alert.innerHTML = `
+              <i class="${icon} me-2"></i>
+              ${mensaje}
+              <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+          `;
+
+          alertZone.appendChild(alert);
+
+          setTimeout(() => {
+              if (alert.parentNode) {
+                  alert.classList.add('animate__animated', 'animate__fadeOut');
+                  setTimeout(() => {
+                      if (alert.parentNode) {
+                          alert.remove();
+                      }
+                  }, 500);
+              }
+          }, 5000);
+
+          mostrarToast(mensaje, tipo);
+      }
+
+      function mostrarToast(mensaje, tipo) {
+          const toastEl = document.getElementById('notificationToast');
+          const toastMessage = document.getElementById('toastMessage');
+
+          toastMessage.innerHTML = `
+              <i class="${tipo === 'error' ? 'fas fa-exclamation-circle' : 'fas fa-check-circle'} me-2"></i>
+              ${mensaje}
+          `;
+
+          const toast = new bootstrap.Toast(toastEl, {
+              autohide: true,
+              delay: 4000
+          });
+
+          toast.show();
+      }
+
+      document.addEventListener('DOMContentLoaded', function() {
+          document.addEventListener('input', function(e) {
+              if (e.target.id === 'montoPago') {
+                  const monto = parseFloat(e.target.value);
+                  const btn = document.getElementById('btnConfirmarPago');
+
+                  if (monto > 0 && monto <= selectedPayment?.montoPendiente && selectedPaymentMethod) {
+                      btn.disabled = false;
+                  } else {
+                      btn.disabled = true;
+                  }
+              }
+          });
+
+          document.addEventListener('keydown', function(e) {
+              if (e.key === 'Escape') {
+                  const modals = document.querySelectorAll('.modal.show');
+                  modals.forEach(modal => {
+                      bootstrap.Modal.getInstance(modal)?.hide();
+                  });
+              }
+          });
+      });
     </script>
     </body>
     </html>

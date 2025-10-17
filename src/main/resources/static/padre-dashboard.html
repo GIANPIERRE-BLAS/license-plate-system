@@ -959,795 +959,795 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
 <script>
-    const API_BASE_URL = 'http://localhost:8080/api';
-    let currentUser = null;
-    let stompClient = null;
-    let dashboardData = null;
-    let selectedStudent = null;
-    let selectedCourses = [];
-    let availableCourses = [];
-
-    document.addEventListener('DOMContentLoaded', function() {
-        verificarAutenticacion();
-    });
-
-    function verificarAutenticacion() {
-        const token = localStorage.getItem('token');
-        const usuario = localStorage.getItem('usuario');
-
-        if (!token || !usuario) {
-            window.location.href = 'login.html';
-            return;
-        }
-
-        try {
-            currentUser = JSON.parse(usuario);
-
-            if (currentUser.rol !== 'PADRE') {
-                if (currentUser.rol === 'ADMIN') {
-                    window.location.href = 'admin-dashboard.html';
-                    return;
-                } else {
-                    cerrarSesion();
-                    return;
-                }
-            }
-
-            document.getElementById('userName').textContent = currentUser.nombre;
-            document.getElementById('welcomeName').textContent = currentUser.nombre;
-
-            cargarDashboard();
-            conectarWebSocket();
-        } catch (error) {
-            console.error('Error al verificar autenticación:', error);
-            cerrarSesion();
-        }
-    }
-
-    async function cargarDashboard() {
-        try {
-            document.getElementById('loading').style.display = 'block';
-            document.getElementById('dashboardContent').style.display = 'none';
-
-            const token = localStorage.getItem('token');
-            if (!token) {
-                mostrarError('No se encontró un token de acceso. Por favor, inicia sesión nuevamente.', 'toast');
-                cerrarSesion();
-                return;
-            }
-
-            const response = await fetch(`${API_BASE_URL}/dashboard/padre/${currentUser.id}`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                }
-            });
-
-            if (!response.ok) {
-                if (response.status === 401) {
-                    mostrarError('Sesión expirada. Por favor, inicia sesión nuevamente.', 'toast');
-                    cerrarSesion();
-                    return;
-                }
-                throw new Error(`Error al cargar dashboard: ${response.status}`);
-            }
-
-            dashboardData = await response.json();
-            console.log('Datos del dashboard:', dashboardData);
-            mostrarDashboard();
-        } catch (error) {
-            console.error('Error:', error);
-            mostrarError(`Error al cargar la información del dashboard: ${error.message}`, 'toast');
-        } finally {
-            document.getElementById('loading').style.display = 'none';
-            document.getElementById('dashboardContent').style.display = 'block';
-        }
-    }
-
-    function mostrarDashboard() {
-        mostrarEstadisticas();
-        mostrarEstudiantes();
-        mostrarPagosPendientes();
-        mostrarActividadReciente();
-    }
-
-    function mostrarEstadisticas() {
-        const statsContainer = document.getElementById('statsContainer');
-        const stats = [
-            {
-                icon: 'fas fa-users',
-                number: dashboardData.totalEstudiantes || 0,
-                label: 'Estudiantes'
-            },
-            {
-                icon: 'fas fa-file-alt',
-                number: dashboardData.matriculasActivas || 0,
-                label: 'Matrículas Activas'
-            },
-            {
-                icon: 'fas fa-clock',
-                number: dashboardData.matriculasPendientes || 0,
-                label: 'Pendientes'
-            },
-            {
-                icon: 'fas fa-dollar-sign',
-                number: `S/ ${(dashboardData.totalDeuda || 0).toFixed(2)}`,
-                label: 'Deuda Total'
-            }
-        ];
-
-        statsContainer.innerHTML = stats.map(stat => `
-            <div class="col-md-3 col-sm-6 mb-3">
-                <div class="stat-card">
-                    <div class="stat-icon">
-                        <i class="${stat.icon}"></i>
-                    </div>
-                    <div class="stat-number">${stat.number}</div>
-                    <div class="stat-label">${stat.label}</div>
-                </div>
-            </div>
-        `).join('');
-    }
-
-    function mostrarEstudiantes() {
-        const container = document.getElementById('estudiantesContainer');
-        const estudiantes = dashboardData.estudiantes || [];
-
-        if (estudiantes.length === 0) {
-            container.innerHTML = `
-                <div class="text-center py-5">
-                    <i class="fas fa-user-plus fa-4x mb-4" style="color: var(--institutional-yellow); opacity: 0.7;"></i>
-                    <h4 style="color: var(--institutional-red);">No hay estudiantes registrados</h4>
-                    <p style="color: var(--institutional-red); opacity: 0.8;">Comienza registrando tu primer estudiante para iniciar el proceso de matrícula</p>
-                    <button class="btn btn-primary btn-lg mt-3" onclick="abrirRegistroEstudiante()">
-                        <i class="fas fa-plus me-2"></i>Registrar Primer Estudiante
-                    </button>
-                </div>
-            `;
-            return;
-        }
-
-        container.innerHTML = estudiantes.map(estudiante => `
-            <div class="student-card animate-slide-up">
-                <div class="d-flex align-items-center">
-                    <div class="student-avatar">
-                        ${estudiante.nombreCompleto.charAt(0).toUpperCase()}
-                    </div>
-                    <div class="ms-4 flex-grow-1">
-                        <h5 class="mb-2" style="color: var(--institutional-red); font-weight: 700;">${estudiante.nombreCompleto}</h5>
-                        <p class="mb-2" style="color: var(--institutional-red); opacity: 0.8;">
-                            <i class="fas fa-graduation-cap me-2"></i>
-                            ${estudiante.grado || 'Sin asignar'} ${estudiante.seccion ? `- Sección ${estudiante.seccion}` : ''}
-                        </p>
-                        <div class="d-flex align-items-center flex-wrap gap-2">
-                            <span class="status-badge status-${getStatusClass(estudiante.estado)}">
-                                ${getStatusText(estudiante.estado)}
-                            </span>
-
-                        </div>
-                    </div>
-                    <div class="dropdown">
-                        <button class="btn btn-outline-danger dropdown-toggle" type="button" data-bs-toggle="dropdown" style="border-color: var(--institutional-red); color: var(--institutional-red);">
-                            <i class="fas fa-cog"></i>
-                        </button>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="#" onclick="verDetalleEstudiante(${estudiante.id})">
-                                <i class="fas fa-eye me-2"></i>Ver Detalles
-                            </a></li>
-                            <li><a class="dropdown-item" href="#" onclick="nuevaMatriculaEstudiante(${estudiante.id})">
-                                <i class="fas fa-file-alt me-2"></i>Nueva Matrícula
-                            </a></li>
-                            <li><a class="dropdown-item" href="#" onclick="verCalificacionesEstudiante(${estudiante.id})">
-                                <i class="fas fa-chart-bar me-2"></i>Calificaciones
-                            </a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="#" onclick="editarEstudiante(${estudiante.id})">
-                                <i class="fas fa-edit me-2"></i>Editar
-                            </a></li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        `).join('');
-    }
-
-    function mostrarPagosPendientes() {
-        const container = document.getElementById('pagosPendientesContainer');
-        const countBadge = document.getElementById('pagosPendientesCount');
-
-        const pagosPendientes = (dashboardData.proximosVencimientos || []).filter(pago =>
-            pago.estado === 'PENDIENTE' || pago.estado === 'PARCIAL'
-        );
-
-        countBadge.textContent = pagosPendientes.length;
-
-        if (pagosPendientes.length === 0) {
-            container.innerHTML = `
-                <div class="text-center py-4">
-                    <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
-                    <h6 class="text-success">¡No hay pagos pendientes!</h6>
-                    <p class="text-muted mb-0">Todas las cuentas están al día</p>
-                </div>
-            `;
-            return;
-        }
-
-        container.innerHTML = pagosPendientes.map(pago => `
-            <div class="payment-card payment-${getPagoStatusClass(pago.estado, pago.diasParaVencimiento)}">
-                <div class="d-flex justify-content-between align-items-start mb-2">
-                    <h6 class="mb-1" style="color: var(--institutional-red); font-weight: 600;">${pago.concepto}</h6>
-                    <strong class="fs-5" style="color: ${pago.diasParaVencimiento < 0 ? 'var(--institutional-red)' : 'var(--institutional-gold)'}">
-                        S/ ${pago.monto.toFixed(2)}
-                    </strong>
-                </div>
-                <small style="color: ${pago.diasParaVencimiento < 0 ? 'var(--institutional-red)' : 'var(--institutional-gold)'}; font-weight: 600;">
-                    ${pago.diasParaVencimiento < 0 ?
-                        `⚠️ Vencido hace ${Math.abs(pago.diasParaVencimiento)} días` :
-                        pago.diasParaVencimiento === 0 ? '🔔 Vence hoy' :
-                        `📅 Vence en ${pago.diasParaVencimiento} días`
-                    }
-                </small>
-            </div>
-        `).join('');
-    }
-
-    function mostrarActividadReciente() {
-        const container = document.getElementById('actividadRecienteContainer');
-        const actividades = [
-            {
-                icon: 'fas fa-file-alt',
-                color: 'var(--institutional-yellow)',
-                titulo: 'Matrícula en proceso',
-                descripcion: 'Matrícula enviada para revisión administrativa',
-                fecha: 'Hace 2 horas'
-            },
-            {
-                icon: 'fas fa-credit-card',
-                color: 'var(--institutional-red)',
-                titulo: 'Pago registrado',
-                descripcion: 'Pago de mensualidad procesado exitosamente',
-                fecha: 'Ayer'
-            },
-            {
-                icon: 'fas fa-bell',
-                color: 'var(--institutional-gold)',
-                titulo: 'Recordatorio importante',
-                descripcion: 'Próximo vencimiento de pago en 5 días',
-                fecha: 'Hace 3 días'
-            }
-        ];
-
-        container.innerHTML = actividades.map(actividad => `
-            <div class="d-flex align-items-center mb-4 pb-3 border-bottom">
-                <div class="me-4" style="width: 50px; height: 50px; border-radius: 50%; background: ${actividad.color}; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 15px rgba(220, 20, 60, 0.2);">
-                    <i class="${actividad.icon} text-white"></i>
-                </div>
-                <div class="flex-grow-1">
-                    <h6 class="mb-1" style="color: var(--institutional-red); font-weight: 600;">${actividad.titulo}</h6>
-                    <p class="mb-0" style="color: var(--institutional-red); opacity: 0.8;">${actividad.descripcion}</p>
-                </div>
-                <div style="color: var(--institutional-red); opacity: 0.6;">
-                    <small>${actividad.fecha}</small>
-                </div>
-            </div>
-        `).join('');
-    }
-
-    function getStatusClass(estado) {
-        const statusMap = {
-            'ACTIVO': 'active',
-            'PENDIENTE': 'pending',
-            'APROBADA': 'approved',
-            'RECHAZADA': 'rejected'
-        };
-        return statusMap[estado] || 'active';
-    }
-
-    function getStatusText(estado) {
-        const textMap = {
-            'ACTIVO': 'Activo',
-            'PENDIENTE': 'Pendiente',
-            'APROBADA': 'Aprobada',
-            'RECHAZADA': 'Rechazada'
-        };
-        return textMap[estado] || estado;
-    }
-
-    function getPagoStatusClass(estado, diasVencimiento) {
-        if (diasVencimiento < 0) return 'overdue';
-        if (estado === 'PAGADO') return 'paid';
-        return 'pending';
-    }
-
-    function conectarWebSocket() {
-        const token = localStorage.getItem('token');
-        const socket = new SockJS(`${API_BASE_URL}/ws?token=${token}`);
-        stompClient = Stomp.over(socket);
-
-        stompClient.connect({}, () => {
-            console.log('✅ WebSocket conectado correctamente');
-
-            stompClient.subscribe(`/user/${currentUser.id}/queue/notificaciones`, (message) => {
-                const notificacion = JSON.parse(message.body);
-                console.log('🔔 Notificación recibida:', notificacion);
-
-                mostrarNotificacion(notificacion);
-
-                if (notificacion.titulo && notificacion.titulo.includes('Matrícula Aprobada')) {
-                    setTimeout(cargarDashboard, 2000);
-                }
-            });
-        }, (error) => {
-            console.error('❌ Error de WebSocket:', error);
-        });
-    }
-
-    function mostrarNotificacion(notificacion) {
-        const toast = new bootstrap.Toast(document.getElementById('notificationToast'));
-        document.getElementById('toastMessage').textContent = notificacion.mensaje || notificacion.message || 'Nueva notificación';
-        toast.show();
-        actualizarConteoNotificaciones();
-    }
-
-    function actualizarConteoNotificaciones() {
-        const notificationCount = document.getElementById('notificationCount');
-        const currentCount = parseInt(notificationCount.textContent) || 0;
-        notificationCount.textContent = currentCount + 1;
-        document.getElementById('noNotifications').style.display = 'none';
-    }
-
-    function mostrarError(mensaje, target = 'toast') {
-        if (target === 'toast') {
-            const toast = new bootstrap.Toast(document.getElementById('notificationToast'));
-            document.getElementById('toastMessage').textContent = mensaje;
-            toast.show();
-        } else if (target === 'cursos') {
-            const errorContainer = document.getElementById('errorCursos');
-            if (errorContainer) {
-                errorContainer.textContent = mensaje;
-                errorContainer.style.display = 'block';
-                setTimeout(() => errorContainer.style.display = 'none', 5000);
-            }
-        }
-    }
-
-    function cerrarSesion() {
-        localStorage.removeItem('token');
-        localStorage.removeItem('usuario');
-        window.location.href = 'login.html';
-    }
-
-    function abrirRegistroEstudiante() {
-        document.getElementById('registroEstudianteForm').reset();
-        const modal = new bootstrap.Modal(document.getElementById('registroEstudianteModal'));
-        modal.show();
-    }
-
-    async function guardarEstudiante() {
-        const form = document.getElementById('registroEstudianteForm');
-        if (!form.checkValidity()) {
-            form.reportValidity();
-            return;
-        }
-
-        const estudianteData = {
-            nombres: document.getElementById('nombres').value,
-            apellidos: document.getElementById('apellidos').value,
-            tipoDocumento: document.getElementById('tipoDocumento').value,
-            numeroDocumento: document.getElementById('numeroDocumento').value,
-            fechaNacimiento: document.getElementById('fechaNacimiento').value,
-            genero: document.getElementById('genero').value,
-            direccion: document.getElementById('direccion').value,
-            telefono: document.getElementById('telefono').value,
-            email: document.getElementById('email').value,
-            nombreContactoEmergencia: document.getElementById('nombreContactoEmergencia').value,
-            telefonoEmergencia: document.getElementById('telefonoEmergencia').value,
-            alergias: document.getElementById('alergias').value,
-            condicionesMedicas: document.getElementById('condicionesMedicas').value,
-            tipoSangre: document.getElementById('tipoSangre').value,
-            apoderadoId: currentUser.id
-        };
-
-        try {
-            const token = localStorage.getItem('token');
-            if (!token) {
-                mostrarError('No se encontró un token de acceso. Por favor, inicia sesión nuevamente.', 'toast');
-                cerrarSesion();
-                return;
-            }
-
-            const response = await fetch(`${API_BASE_URL}/estudiantes`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(estudianteData)
-            });
-
-            if (!response.ok) {
-                if (response.status === 401) {
-                    mostrarError('Sesión expirada. Por favor, inicia sesión nuevamente.', 'toast');
-                    cerrarSesion();
-                    return;
-                }
-                const errorData = await response.json();
-                throw new Error(`Error al registrar estudiante: ${errorData.message || 'Datos inválidos'}`);
-            }
-
-            bootstrap.Modal.getInstance(document.getElementById('registroEstudianteModal')).hide();
-            mostrarNotificacion({ mensaje: 'Estudiante registrado con éxito' });
-            cargarDashboard();
-        } catch (error) {
-            console.error('Error:', error);
-            mostrarError(`Error al registrar estudiante: ${error.message}`, 'toast');
-        }
-    }
-
-    function abrirNuevaMatricula() {
-        if (!dashboardData.estudiantes || dashboardData.estudiantes.length === 0) {
-            mostrarError('Primero debe registrar al menos un estudiante para poder crear una matrícula', 'toast');
-            return;
-        }
-        resetearModalMatricula();
-        cargarEstudiantesParaMatricula();
-        const modal = new bootstrap.Modal(document.getElementById('nuevaMatriculaModal'));
-        modal.show();
-    }
-
-    function resetearModalMatricula() {
-        document.getElementById('nuevaMatriculaStep1').style.display = 'block';
-        document.getElementById('nuevaMatriculaStep2').style.display = 'none';
-        selectedStudent = null;
-        selectedCourses = [];
-        document.getElementById('btnSiguienteEstudiante').disabled = true;
-        document.getElementById('matriculaForm').reset();
-        document.getElementById('cursosDisponibles').innerHTML = '';
-        document.getElementById('errorCursos').style.display = 'none';
-    }
-
-    function cargarEstudiantesParaMatricula() {
-        const container = document.getElementById('estudiantesSeleccion');
-        const estudiantes = dashboardData.estudiantes || [];
-        container.innerHTML = estudiantes.map(estudiante => `
-            <div class="col-md-6 mb-3">
-                <div class="card h-100" style="cursor: pointer; border: 2px solid transparent; transition: all 0.3s ease;" onclick="seleccionarEstudiante(${estudiante.id}, '${estudiante.nombreCompleto}', this)">
-                    <div class="card-body text-center">
-                        <div style="width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, var(--institutional-red), var(--institutional-yellow)); display: flex; align-items: center; justify-content: center; margin: 0 auto 15px;">
-                            <span class="text-white fw-bold fs-4">${estudiante.nombreCompleto.charAt(0)}</span>
-                        </div>
-                        <h6 style="color: var(--institutional-red);">${estudiante.nombreCompleto}</h6>
-                        <p class="mb-0" style="color: var(--institutional-red); opacity: 0.8;">${estudiante.grado || 'Sin asignar'}</p>
-                    </div>
-                </div>
-            </div>
-        `).join('');
-    }
-
-    function seleccionarEstudiante(id, nombre, element) {
-        selectedStudent = { id, nombre };
-        document.querySelectorAll('#estudiantesSeleccion .card').forEach(card => {
-            card.style.border = '2px solid transparent';
-        });
-        element.style.border = '2px solid var(--institutional-yellow)';
-        document.getElementById('btnSiguienteEstudiante').disabled = false;
-    }
-
-    function siguientePasoMatricula() {
-        if (!selectedStudent) {
-            mostrarError('Por favor, seleccione un estudiante', 'toast');
-            return;
-        }
-        document.getElementById('nuevaMatriculaStep1').style.display = 'none';
-        document.getElementById('nuevaMatriculaStep2').style.display = 'block';
-    }
-
-    function anteriorPasoMatricula() {
-        document.getElementById('nuevaMatriculaStep2').style.display = 'none';
-        document.getElementById('nuevaMatriculaStep1').style.display = 'block';
-    }
-
-    async function cargarCursosPorNivel() {
-        let nivel = document.getElementById('nivelAcademico').value?.trim();
-        if (!nivel) {
-            mostrarError('Por favor, seleccione un nivel académico', 'cursos');
-            return;
-        }
-
-        try {
-            const token = localStorage.getItem('token');
-            if (!token) {
-                mostrarError('No se encontró un token de acceso. Por favor, inicia sesión nuevamente.', 'toast');
-                cerrarSesion();
-                return;
-            }
-
-            const cleanUrl = `${API_BASE_URL}/cursos/disponibles?nivel=${encodeURIComponent(nivel.toUpperCase())}`;
-            console.log('URL generada:', cleanUrl);
-
-            const response = await fetch(cleanUrl, {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                }
-            });
-
-            if (!response.ok) {
-                if (response.status === 401) {
-                    mostrarError('Sesión expirada. Por favor, inicia sesión nuevamente.', 'toast');
-                    cerrarSesion();
-                    return;
-                }
-                let errorMessage = 'Error desconocido';
-                try {
-                    const errorData = await response.json();
-                    errorMessage = errorData.message || 'No message available';
-                } catch (e) {
-                    errorMessage = 'Respuesta del servidor no válida';
-                }
-                throw new Error(`Error al cargar cursos: ${response.status} - ${errorMessage}`);
-            }
-
-            const cursos = await response.json();
-            availableCourses = cursos;
-            console.log('Cursos cargados:', cursos);
-
-            const gradosUnicos = [...new Set((cursos || []).map(c => c.grado))];
-            const gradoSelect = document.getElementById('grado');
-            if (gradoSelect) {
-                gradoSelect.innerHTML = '<option value="">Seleccionar...</option>' +
-                    gradosUnicos.map(grado => `<option value="${grado}">${grado}</option>`).join('');
-            }
-
-            document.getElementById('cursosDisponibles').innerHTML = '';
-            selectedCourses = [];
-            actualizarResumenCostos();
-
-        } catch (error) {
-            console.error('Error:', error);
-            mostrarError(`Error al cargar los cursos: ${error.message}`, 'cursos');
-        }
-    }
-
-    async function cargarCursosPorGrado() {
-        const nivel = document.getElementById('nivelAcademico').value?.trim();
-        const grado = document.getElementById('grado').value?.trim();
-        const container = document.getElementById('cursosDisponibles');
-
-        if (!nivel || !grado || !container) {
-            console.warn("Faltan datos para cargar cursos por grado");
-            return;
-        }
-
-        const url = `${API_BASE_URL}/cursos/nivel/${encodeURIComponent(nivel.toUpperCase())}/grado/${encodeURIComponent(grado)}`;
-        console.log("URL generada:", url);
-
-        try {
-            const response = await fetch(url, {
-                headers: {
-                    "Authorization": "Bearer " + localStorage.getItem("token"),
-                    "Content-Type": "application/json"
-                }
-            });
-
-            if (!response.ok) {
-                throw new Error("Error al cargar cursos");
-            }
-
-            const cursos = await response.json();
-            console.log('Cursos por grado:', cursos);
-            container.innerHTML = "";
-
-            if (!cursos || cursos.length === 0) {
-                container.innerHTML = `
-                    <div class="col-12 text-center p-3 text-muted">
-                        <i class="fas fa-book fa-2x mb-2"></i>
-                        <p>No hay cursos disponibles para este grado.</p>
-                    </div>
-                `;
-                return;
-            }
-
-            cursos.forEach(curso => {
-                const cursoCard = document.createElement("div");
-                cursoCard.classList.add("col-md-6", "mb-3");
-
-                cursoCard.innerHTML = `
-                    <div class="curso-card shadow-sm p-3 rounded">
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="curso-${curso.id}" value="${curso.id}"
-                                onchange="actualizarCursosSeleccionados(this)"
-                                data-nombre="${curso.nombre}"
-                                data-profesor="${curso.nombreProfesor || 'Sin asignar'}"
-                                data-modalidad="${curso.modalidad}"
-                                data-horario="${curso.horarioCompleto || 'Sin horario'}"
-                                data-aula="${curso.aula || 'Sin aula'}"
-                                data-matricula="${curso.costoMatricula || 0}"
-                                data-mensualidad="${curso.costoMensualidad || 0}"
-                                data-materiales="${curso.costoMateriales || 0}"
-                            >
-                            <label class="form-check-label fw-bold w-100" for="curso-${curso.id}">
-                                <div class="d-flex justify-content-between align-items-start">
-                                    <div>
-                                        <div>${curso.nombre || "Sin nombre"}</div>
-                                        <small class="text-muted">${curso.creditos || 0} créditos - ${curso.nombreProfesor || 'Sin profesor'}</small>
-                                        <div><small class="text-muted"><i class="fas fa-clock me-1"></i>${curso.horarioCompleto || 'Sin horario'}</small></div>
-                                        <div><small class="text-muted"><i class="fas fa-door-open me-1"></i>Aula ${curso.aula || 'N/A'}</small></div>
-                                    </div>
-                                    <div class="text-end">
-                                        <small class="text-primary fw-bold">S/ ${(parseFloat(curso.costoMatricula || 0) + parseFloat(curso.costoMensualidad || 0) + parseFloat(curso.costoMateriales || 0)).toFixed(2)}</small>
-                                    </div>
-                                </div>
-                            </label>
-                        </div>
-                    </div>
-                `;
-
-                container.appendChild(cursoCard);
-            });
-
-        } catch (error) {
-            console.error("Error cargando cursos:", error);
-            container.innerHTML = `
-                <div class="col-12 alert alert-danger text-center">
-                    <i class="fas fa-exclamation-circle"></i> Error al cargar cursos
-                </div>
-            `;
-        }
-    }
-
-    function actualizarCursosSeleccionados(checkbox) {
-        const cursoId = parseInt(checkbox.value);
-        if (checkbox.checked) {
-            if (!selectedCourses.includes(cursoId)) selectedCourses.push(cursoId);
-        } else {
-            selectedCourses = selectedCourses.filter(id => id !== cursoId);
-        }
-        console.log('Cursos seleccionados:', selectedCourses);
-        actualizarResumenCostos();
-    }
-
-    function actualizarResumenCostos() {
-        let totalMatricula = 0;
-        let totalMensualidad = 0;
-        let totalMateriales = 0;
-
-        selectedCourses.forEach(id => {
-            const checkbox = document.getElementById(`curso-${id}`);
-            if (checkbox) {
-                totalMatricula += parseFloat(checkbox.dataset.matricula) || 0;
-                totalMensualidad += parseFloat(checkbox.dataset.mensualidad) || 0;
-                totalMateriales += parseFloat(checkbox.dataset.materiales) || 0;
-            }
-        });
-
-        const total = totalMatricula + totalMensualidad + totalMateriales;
-
-        document.getElementById('resumenCostos').innerHTML = `
-            <p class="mb-1">Matrícula: <span class="float-end">S/ ${totalMatricula.toFixed(2)}</span></p>
-            <p class="mb-1">Mensualidad: <span class="float-end">S/ ${totalMensualidad.toFixed(2)}</span></p>
-            <p class="mb-1">Materiales: <span class="float-end">S/ ${totalMateriales.toFixed(2)}</span></p>
-            <hr style="border-color: var(--institutional-red);">
-            <h6 style="color: var(--institutional-red);">Total: <span class="float-end">S/ ${total.toFixed(2)}</span></h6>
-        `;
-    }
-
-    async function enviarMatricula() {
-        const form = document.getElementById('matriculaForm');
-        if (!form.checkValidity()) {
-            form.reportValidity();
-            return;
-        }
-
-        if (!selectedStudent || selectedCourses.length === 0) {
-            mostrarError('Por favor, seleccione un estudiante y al menos un curso', 'cursos');
-            return;
-        }
-
-        const anioAcademicoElement = document.getElementById('anioAcademico');
-        const anioAcademicoValue = anioAcademicoElement ? anioAcademicoElement.value.trim() : null;
-
-        if (!anioAcademicoValue) {
-            mostrarError('El año académico es obligatorio', 'toast');
-            return;
-        }
-
-        const btnEnviar = document.getElementById('btnEnviarMatricula');
-        const textoOriginal = btnEnviar.innerHTML;
-        btnEnviar.disabled = true;
-        btnEnviar.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Enviando...';
-
-        try {
-            const matriculaData = {
-                estudianteId: selectedStudent.id,
-                nivelAcademico: document.getElementById('nivelAcademico').value.toUpperCase(),
-                grado: document.getElementById('grado').value,
-                seccion: document.getElementById('seccion').value || null,
-                anioAcademico: anioAcademicoValue,
-                cursosIds: selectedCourses,
-                comentariosApoderado: document.getElementById('comentariosApoderado').value || null
-            };
-
-            console.log('Datos de matrícula a enviar:', matriculaData);
-
-            const token = localStorage.getItem('token');
-            if (!token) {
-                mostrarError('No se encontró un token de acceso. Por favor, inicia sesión nuevamente.', 'toast');
-                cerrarSesion();
-                return;
-            }
-
-            const matriculaResponse = await fetch(`${API_BASE_URL}/matriculas`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json; charset=utf-8'
-                },
-                body: JSON.stringify(matriculaData)
-            });
-
-            if (!matriculaResponse.ok) {
-                const errorData = await matriculaResponse.json().catch(() => ({}));
-                throw new Error(errorData.mensaje || errorData.message || 'Error al crear la matrícula');
-            }
-
-            const matriculaCreada = await matriculaResponse.json();
-            console.log('Matrícula creada:', matriculaCreada);
-
-            bootstrap.Modal.getInstance(document.getElementById('nuevaMatriculaModal')).hide();
-            mostrarNotificacion({ mensaje: 'Matrícula enviada exitosamente. Los costos serán calculados por el administrador.' });
-
-            setTimeout(() => {
-                cargarDashboard();
-            }, 1000);
-
-        } catch (error) {
-            console.error('Error al crear matrícula:', error);
-            mostrarError(`Error al crear la matrícula: ${error.message}`, 'toast');
-        } finally {
-            btnEnviar.disabled = false;
-            btnEnviar.innerHTML = textoOriginal;
-        }
-    }
-
-    function verPagos() {
-        window.location.href = 'pagos.html';
-    }
-
-    function verHorarios() {
-        window.location.href = 'horarios.html';
-    }
-
-    function refrescarEstudiantes() {
-        cargarDashboard();
-    }
-
-    function verDetalleEstudiante(id) {
-        window.location.href = `detalle-estudiante.html?id=${id}`;
-    }
-
-    function nuevaMatriculaEstudiante(id) {
-        const estudiante = dashboardData.estudiantes.find(e => e.id === id);
-        if (estudiante) {
-            selectedStudent = { id, nombre: estudiante.nombreCompleto };
-            document.getElementById('nuevaMatriculaStep1').style.display = 'none';
-            document.getElementById('nuevaMatriculaStep2').style.display = 'block';
-            const modal = new bootstrap.Modal(document.getElementById('nuevaMatriculaModal'));
-            modal.show();
-        }
-    }
-
-    function verCalificacionesEstudiante(id) {
-        window.location.href = `calificaciones.html?estudianteId=${id}`;
-    }
-
-    function editarEstudiante(id) {
-        window.location.href = `editar-estudiante.html?id=${id}`;
-    }
-
-    setInterval(() => {
-        cargarDashboard();
-    }, 30000);
+    const API_BASE_URL = `${window.location.origin}/api`;
+  let currentUser = null;
+  let stompClient = null;
+  let dashboardData = null;
+  let selectedStudent = null;
+  let selectedCourses = [];
+  let availableCourses = [];
+
+  document.addEventListener('DOMContentLoaded', function() {
+      verificarAutenticacion();
+  });
+
+  function verificarAutenticacion() {
+      const token = localStorage.getItem('token');
+      const usuario = localStorage.getItem('usuario');
+
+      if (!token || !usuario) {
+          window.location.href = 'login.html';
+          return;
+      }
+
+      try {
+          currentUser = JSON.parse(usuario);
+
+          if (currentUser.rol !== 'PADRE') {
+              if (currentUser.rol === 'ADMIN') {
+                  window.location.href = 'admin-dashboard.html';
+                  return;
+              } else {
+                  cerrarSesion();
+                  return;
+              }
+          }
+
+          document.getElementById('userName').textContent = currentUser.nombre;
+          document.getElementById('welcomeName').textContent = currentUser.nombre;
+
+          cargarDashboard();
+          conectarWebSocket();
+      } catch (error) {
+          console.error('Error al verificar autenticación:', error);
+          cerrarSesion();
+      }
+  }
+
+  async function cargarDashboard() {
+      try {
+          document.getElementById('loading').style.display = 'block';
+          document.getElementById('dashboardContent').style.display = 'none';
+
+          const token = localStorage.getItem('token');
+          if (!token) {
+              mostrarError('No se encontró un token de acceso. Por favor, inicia sesión nuevamente.', 'toast');
+              cerrarSesion();
+              return;
+          }
+
+          const response = await fetch(`${API_BASE_URL}/dashboard/padre/${currentUser.id}`, {
+              headers: {
+                  'Authorization': `Bearer ${token}`,
+                  'Content-Type': 'application/json'
+              }
+          });
+
+          if (!response.ok) {
+              if (response.status === 401) {
+                  mostrarError('Sesión expirada. Por favor, inicia sesión nuevamente.', 'toast');
+                  cerrarSesion();
+                  return;
+              }
+              throw new Error(`Error al cargar dashboard: ${response.status}`);
+          }
+
+          dashboardData = await response.json();
+          console.log('Datos del dashboard:', dashboardData);
+          mostrarDashboard();
+      } catch (error) {
+          console.error('Error:', error);
+          mostrarError(`Error al cargar la información del dashboard: ${error.message}`, 'toast');
+      } finally {
+          document.getElementById('loading').style.display = 'none';
+          document.getElementById('dashboardContent').style.display = 'block';
+      }
+  }
+
+  function mostrarDashboard() {
+      mostrarEstadisticas();
+      mostrarEstudiantes();
+      mostrarPagosPendientes();
+      mostrarActividadReciente();
+  }
+
+  function mostrarEstadisticas() {
+      const statsContainer = document.getElementById('statsContainer');
+      const stats = [
+          {
+              icon: 'fas fa-users',
+              number: dashboardData.totalEstudiantes || 0,
+              label: 'Estudiantes'
+          },
+          {
+              icon: 'fas fa-file-alt',
+              number: dashboardData.matriculasActivas || 0,
+              label: 'Matrículas Activas'
+          },
+          {
+              icon: 'fas fa-clock',
+              number: dashboardData.matriculasPendientes || 0,
+              label: 'Pendientes'
+          },
+          {
+              icon: 'fas fa-dollar-sign',
+              number: `S/ ${(dashboardData.totalDeuda || 0).toFixed(2)}`,
+              label: 'Deuda Total'
+          }
+      ];
+
+      statsContainer.innerHTML = stats.map(stat => `
+          <div class="col-md-3 col-sm-6 mb-3">
+              <div class="stat-card">
+                  <div class="stat-icon">
+                      <i class="${stat.icon}"></i>
+                  </div>
+                  <div class="stat-number">${stat.number}</div>
+                  <div class="stat-label">${stat.label}</div>
+              </div>
+          </div>
+      `).join('');
+  }
+
+  function mostrarEstudiantes() {
+      const container = document.getElementById('estudiantesContainer');
+      const estudiantes = dashboardData.estudiantes || [];
+
+      if (estudiantes.length === 0) {
+          container.innerHTML = `
+              <div class="text-center py-5">
+                  <i class="fas fa-user-plus fa-4x mb-4" style="color: var(--institutional-yellow); opacity: 0.7;"></i>
+                  <h4 style="color: var(--institutional-red);">No hay estudiantes registrados</h4>
+                  <p style="color: var(--institutional-red); opacity: 0.8;">Comienza registrando tu primer estudiante para iniciar el proceso de matrícula</p>
+                  <button class="btn btn-primary btn-lg mt-3" onclick="abrirRegistroEstudiante()">
+                      <i class="fas fa-plus me-2"></i>Registrar Primer Estudiante
+                  </button>
+              </div>
+          `;
+          return;
+      }
+
+      container.innerHTML = estudiantes.map(estudiante => `
+          <div class="student-card animate-slide-up">
+              <div class="d-flex align-items-center">
+                  <div class="student-avatar">
+                      ${estudiante.nombreCompleto.charAt(0).toUpperCase()}
+                  </div>
+                  <div class="ms-4 flex-grow-1">
+                      <h5 class="mb-2" style="color: var(--institutional-red); font-weight: 700;">${estudiante.nombreCompleto}</h5>
+                      <p class="mb-2" style="color: var(--institutional-red); opacity: 0.8;">
+                          <i class="fas fa-graduation-cap me-2"></i>
+                          ${estudiante.grado || 'Sin asignar'} ${estudiante.seccion ? `- Sección ${estudiante.seccion}` : ''}
+                      </p>
+                      <div class="d-flex align-items-center flex-wrap gap-2">
+                          <span class="status-badge status-${getStatusClass(estudiante.estado)}">
+                              ${getStatusText(estudiante.estado)}
+                          </span>
+
+                      </div>
+                  </div>
+                  <div class="dropdown">
+                      <button class="btn btn-outline-danger dropdown-toggle" type="button" data-bs-toggle="dropdown" style="border-color: var(--institutional-red); color: var(--institutional-red);">
+                          <i class="fas fa-cog"></i>
+                      </button>
+                      <ul class="dropdown-menu">
+                          <li><a class="dropdown-item" href="#" onclick="verDetalleEstudiante(${estudiante.id})">
+                              <i class="fas fa-eye me-2"></i>Ver Detalles
+                          </a></li>
+                          <li><a class="dropdown-item" href="#" onclick="nuevaMatriculaEstudiante(${estudiante.id})">
+                              <i class="fas fa-file-alt me-2"></i>Nueva Matrícula
+                          </a></li>
+                          <li><a class="dropdown-item" href="#" onclick="verCalificacionesEstudiante(${estudiante.id})">
+                              <i class="fas fa-chart-bar me-2"></i>Calificaciones
+                          </a></li>
+                          <li><hr class="dropdown-divider"></li>
+                          <li><a class="dropdown-item" href="#" onclick="editarEstudiante(${estudiante.id})">
+                              <i class="fas fa-edit me-2"></i>Editar
+                          </a></li>
+                      </ul>
+                  </div>
+              </div>
+          </div>
+      `).join('');
+  }
+
+  function mostrarPagosPendientes() {
+      const container = document.getElementById('pagosPendientesContainer');
+      const countBadge = document.getElementById('pagosPendientesCount');
+
+      const pagosPendientes = (dashboardData.proximosVencimientos || []).filter(pago =>
+          pago.estado === 'PENDIENTE' || pago.estado === 'PARCIAL'
+      );
+
+      countBadge.textContent = pagosPendientes.length;
+
+      if (pagosPendientes.length === 0) {
+          container.innerHTML = `
+              <div class="text-center py-4">
+                  <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                  <h6 class="text-success">¡No hay pagos pendientes!</h6>
+                  <p class="text-muted mb-0">Todas las cuentas están al día</p>
+              </div>
+          `;
+          return;
+      }
+
+      container.innerHTML = pagosPendientes.map(pago => `
+          <div class="payment-card payment-${getPagoStatusClass(pago.estado, pago.diasParaVencimiento)}">
+              <div class="d-flex justify-content-between align-items-start mb-2">
+                  <h6 class="mb-1" style="color: var(--institutional-red); font-weight: 600;">${pago.concepto}</h6>
+                  <strong class="fs-5" style="color: ${pago.diasParaVencimiento < 0 ? 'var(--institutional-red)' : 'var(--institutional-gold)'}">
+                      S/ ${pago.monto.toFixed(2)}
+                  </strong>
+              </div>
+              <small style="color: ${pago.diasParaVencimiento < 0 ? 'var(--institutional-red)' : 'var(--institutional-gold)'}; font-weight: 600;">
+                  ${pago.diasParaVencimiento < 0 ?
+                      `⚠️ Vencido hace ${Math.abs(pago.diasParaVencimiento)} días` :
+                      pago.diasParaVencimiento === 0 ? '🔔 Vence hoy' :
+                      `📅 Vence en ${pago.diasParaVencimiento} días`
+                  }
+              </small>
+          </div>
+      `).join('');
+  }
+
+  function mostrarActividadReciente() {
+      const container = document.getElementById('actividadRecienteContainer');
+      const actividades = [
+          {
+              icon: 'fas fa-file-alt',
+              color: 'var(--institutional-yellow)',
+              titulo: 'Matrícula en proceso',
+              descripcion: 'Matrícula enviada para revisión administrativa',
+              fecha: 'Hace 2 horas'
+          },
+          {
+              icon: 'fas fa-credit-card',
+              color: 'var(--institutional-red)',
+              titulo: 'Pago registrado',
+              descripcion: 'Pago de mensualidad procesado exitosamente',
+              fecha: 'Ayer'
+          },
+          {
+              icon: 'fas fa-bell',
+              color: 'var(--institutional-gold)',
+              titulo: 'Recordatorio importante',
+              descripcion: 'Próximo vencimiento de pago en 5 días',
+              fecha: 'Hace 3 días'
+          }
+      ];
+
+      container.innerHTML = actividades.map(actividad => `
+          <div class="d-flex align-items-center mb-4 pb-3 border-bottom">
+              <div class="me-4" style="width: 50px; height: 50px; border-radius: 50%; background: ${actividad.color}; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 15px rgba(220, 20, 60, 0.2);">
+                  <i class="${actividad.icon} text-white"></i>
+              </div>
+              <div class="flex-grow-1">
+                  <h6 class="mb-1" style="color: var(--institutional-red); font-weight: 600;">${actividad.titulo}</h6>
+                  <p class="mb-0" style="color: var(--institutional-red); opacity: 0.8;">${actividad.descripcion}</p>
+              </div>
+              <div style="color: var(--institutional-red); opacity: 0.6;">
+                  <small>${actividad.fecha}</small>
+              </div>
+          </div>
+      `).join('');
+  }
+
+  function getStatusClass(estado) {
+      const statusMap = {
+          'ACTIVO': 'active',
+          'PENDIENTE': 'pending',
+          'APROBADA': 'approved',
+          'RECHAZADA': 'rejected'
+      };
+      return statusMap[estado] || 'active';
+  }
+
+  function getStatusText(estado) {
+      const textMap = {
+          'ACTIVO': 'Activo',
+          'PENDIENTE': 'Pendiente',
+          'APROBADA': 'Aprobada',
+          'RECHAZADA': 'Rechazada'
+      };
+      return textMap[estado] || estado;
+  }
+
+  function getPagoStatusClass(estado, diasVencimiento) {
+      if (diasVencimiento < 0) return 'overdue';
+      if (estado === 'PAGADO') return 'paid';
+      return 'pending';
+  }
+
+  function conectarWebSocket() {
+      const token = localStorage.getItem('token');
+      const socket = new SockJS(`${API_BASE_URL}/ws?token=${token}`);
+      stompClient = Stomp.over(socket);
+
+      stompClient.connect({}, () => {
+          console.log('✅ WebSocket conectado correctamente');
+
+          stompClient.subscribe(`/user/${currentUser.id}/queue/notificaciones`, (message) => {
+              const notificacion = JSON.parse(message.body);
+              console.log('🔔 Notificación recibida:', notificacion);
+
+              mostrarNotificacion(notificacion);
+
+              if (notificacion.titulo && notificacion.titulo.includes('Matrícula Aprobada')) {
+                  setTimeout(cargarDashboard, 2000);
+              }
+          });
+      }, (error) => {
+          console.error('❌ Error de WebSocket:', error);
+      });
+  }
+
+  function mostrarNotificacion(notificacion) {
+      const toast = new bootstrap.Toast(document.getElementById('notificationToast'));
+      document.getElementById('toastMessage').textContent = notificacion.mensaje || notificacion.message || 'Nueva notificación';
+      toast.show();
+      actualizarConteoNotificaciones();
+  }
+
+  function actualizarConteoNotificaciones() {
+      const notificationCount = document.getElementById('notificationCount');
+      const currentCount = parseInt(notificationCount.textContent) || 0;
+      notificationCount.textContent = currentCount + 1;
+      document.getElementById('noNotifications').style.display = 'none';
+  }
+
+  function mostrarError(mensaje, target = 'toast') {
+      if (target === 'toast') {
+          const toast = new bootstrap.Toast(document.getElementById('notificationToast'));
+          document.getElementById('toastMessage').textContent = mensaje;
+          toast.show();
+      } else if (target === 'cursos') {
+          const errorContainer = document.getElementById('errorCursos');
+          if (errorContainer) {
+              errorContainer.textContent = mensaje;
+              errorContainer.style.display = 'block';
+              setTimeout(() => errorContainer.style.display = 'none', 5000);
+          }
+      }
+  }
+
+  function cerrarSesion() {
+      localStorage.removeItem('token');
+      localStorage.removeItem('usuario');
+      window.location.href = 'login.html';
+  }
+
+  function abrirRegistroEstudiante() {
+      document.getElementById('registroEstudianteForm').reset();
+      const modal = new bootstrap.Modal(document.getElementById('registroEstudianteModal'));
+      modal.show();
+  }
+
+  async function guardarEstudiante() {
+      const form = document.getElementById('registroEstudianteForm');
+      if (!form.checkValidity()) {
+          form.reportValidity();
+          return;
+      }
+
+      const estudianteData = {
+          nombres: document.getElementById('nombres').value,
+          apellidos: document.getElementById('apellidos').value,
+          tipoDocumento: document.getElementById('tipoDocumento').value,
+          numeroDocumento: document.getElementById('numeroDocumento').value,
+          fechaNacimiento: document.getElementById('fechaNacimiento').value,
+          genero: document.getElementById('genero').value,
+          direccion: document.getElementById('direccion').value,
+          telefono: document.getElementById('telefono').value,
+          email: document.getElementById('email').value,
+          nombreContactoEmergencia: document.getElementById('nombreContactoEmergencia').value,
+          telefonoEmergencia: document.getElementById('telefonoEmergencia').value,
+          alergias: document.getElementById('alergias').value,
+          condicionesMedicas: document.getElementById('condicionesMedicas').value,
+          tipoSangre: document.getElementById('tipoSangre').value,
+          apoderadoId: currentUser.id
+      };
+
+      try {
+          const token = localStorage.getItem('token');
+          if (!token) {
+              mostrarError('No se encontró un token de acceso. Por favor, inicia sesión nuevamente.', 'toast');
+              cerrarSesion();
+              return;
+          }
+
+          const response = await fetch(`${API_BASE_URL}/estudiantes`, {
+              method: 'POST',
+              headers: {
+                  'Authorization': `Bearer ${token}`,
+                  'Content-Type': 'application/json'
+              },
+              body: JSON.stringify(estudianteData)
+          });
+
+          if (!response.ok) {
+              if (response.status === 401) {
+                  mostrarError('Sesión expirada. Por favor, inicia sesión nuevamente.', 'toast');
+                  cerrarSesion();
+                  return;
+              }
+              const errorData = await response.json();
+              throw new Error(`Error al registrar estudiante: ${errorData.message || 'Datos inválidos'}`);
+          }
+
+          bootstrap.Modal.getInstance(document.getElementById('registroEstudianteModal')).hide();
+          mostrarNotificacion({ mensaje: 'Estudiante registrado con éxito' });
+          cargarDashboard();
+      } catch (error) {
+          console.error('Error:', error);
+          mostrarError(`Error al registrar estudiante: ${error.message}`, 'toast');
+      }
+  }
+
+  function abrirNuevaMatricula() {
+      if (!dashboardData.estudiantes || dashboardData.estudiantes.length === 0) {
+          mostrarError('Primero debe registrar al menos un estudiante para poder crear una matrícula', 'toast');
+          return;
+      }
+      resetearModalMatricula();
+      cargarEstudiantesParaMatricula();
+      const modal = new bootstrap.Modal(document.getElementById('nuevaMatriculaModal'));
+      modal.show();
+  }
+
+  function resetearModalMatricula() {
+      document.getElementById('nuevaMatriculaStep1').style.display = 'block';
+      document.getElementById('nuevaMatriculaStep2').style.display = 'none';
+      selectedStudent = null;
+      selectedCourses = [];
+      document.getElementById('btnSiguienteEstudiante').disabled = true;
+      document.getElementById('matriculaForm').reset();
+      document.getElementById('cursosDisponibles').innerHTML = '';
+      document.getElementById('errorCursos').style.display = 'none';
+  }
+
+  function cargarEstudiantesParaMatricula() {
+      const container = document.getElementById('estudiantesSeleccion');
+      const estudiantes = dashboardData.estudiantes || [];
+      container.innerHTML = estudiantes.map(estudiante => `
+          <div class="col-md-6 mb-3">
+              <div class="card h-100" style="cursor: pointer; border: 2px solid transparent; transition: all 0.3s ease;" onclick="seleccionarEstudiante(${estudiante.id}, '${estudiante.nombreCompleto}', this)">
+                  <div class="card-body text-center">
+                      <div style="width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, var(--institutional-red), var(--institutional-yellow)); display: flex; align-items: center; justify-content: center; margin: 0 auto 15px;">
+                          <span class="text-white fw-bold fs-4">${estudiante.nombreCompleto.charAt(0)}</span>
+                      </div>
+                      <h6 style="color: var(--institutional-red);">${estudiante.nombreCompleto}</h6>
+                      <p class="mb-0" style="color: var(--institutional-red); opacity: 0.8;">${estudiante.grado || 'Sin asignar'}</p>
+                  </div>
+              </div>
+          </div>
+      `).join('');
+  }
+
+  function seleccionarEstudiante(id, nombre, element) {
+      selectedStudent = { id, nombre };
+      document.querySelectorAll('#estudiantesSeleccion .card').forEach(card => {
+          card.style.border = '2px solid transparent';
+      });
+      element.style.border = '2px solid var(--institutional-yellow)';
+      document.getElementById('btnSiguienteEstudiante').disabled = false;
+  }
+
+  function siguientePasoMatricula() {
+      if (!selectedStudent) {
+          mostrarError('Por favor, seleccione un estudiante', 'toast');
+          return;
+      }
+      document.getElementById('nuevaMatriculaStep1').style.display = 'none';
+      document.getElementById('nuevaMatriculaStep2').style.display = 'block';
+  }
+
+  function anteriorPasoMatricula() {
+      document.getElementById('nuevaMatriculaStep2').style.display = 'none';
+      document.getElementById('nuevaMatriculaStep1').style.display = 'block';
+  }
+
+  async function cargarCursosPorNivel() {
+      let nivel = document.getElementById('nivelAcademico').value?.trim();
+      if (!nivel) {
+          mostrarError('Por favor, seleccione un nivel académico', 'cursos');
+          return;
+      }
+
+      try {
+          const token = localStorage.getItem('token');
+          if (!token) {
+              mostrarError('No se encontró un token de acceso. Por favor, inicia sesión nuevamente.', 'toast');
+              cerrarSesion();
+              return;
+          }
+
+          const cleanUrl = `${API_BASE_URL}/cursos/disponibles?nivel=${encodeURIComponent(nivel.toUpperCase())}`;
+          console.log('URL generada:', cleanUrl);
+
+          const response = await fetch(cleanUrl, {
+              headers: {
+                  'Authorization': `Bearer ${token}`,
+                  'Content-Type': 'application/json'
+              }
+          });
+
+          if (!response.ok) {
+              if (response.status === 401) {
+                  mostrarError('Sesión expirada. Por favor, inicia sesión nuevamente.', 'toast');
+                  cerrarSesion();
+                  return;
+              }
+              let errorMessage = 'Error desconocido';
+              try {
+                  const errorData = await response.json();
+                  errorMessage = errorData.message || 'No message available';
+              } catch (e) {
+                  errorMessage = 'Respuesta del servidor no válida';
+              }
+              throw new Error(`Error al cargar cursos: ${response.status} - ${errorMessage}`);
+          }
+
+          const cursos = await response.json();
+          availableCourses = cursos;
+          console.log('Cursos cargados:', cursos);
+
+          const gradosUnicos = [...new Set((cursos || []).map(c => c.grado))];
+          const gradoSelect = document.getElementById('grado');
+          if (gradoSelect) {
+              gradoSelect.innerHTML = '<option value="">Seleccionar...</option>' +
+                  gradosUnicos.map(grado => `<option value="${grado}">${grado}</option>`).join('');
+          }
+
+          document.getElementById('cursosDisponibles').innerHTML = '';
+          selectedCourses = [];
+          actualizarResumenCostos();
+
+      } catch (error) {
+          console.error('Error:', error);
+          mostrarError(`Error al cargar los cursos: ${error.message}`, 'cursos');
+      }
+  }
+
+  async function cargarCursosPorGrado() {
+      const nivel = document.getElementById('nivelAcademico').value?.trim();
+      const grado = document.getElementById('grado').value?.trim();
+      const container = document.getElementById('cursosDisponibles');
+
+      if (!nivel || !grado || !container) {
+          console.warn("Faltan datos para cargar cursos por grado");
+          return;
+      }
+
+      const url = `${API_BASE_URL}/cursos/nivel/${encodeURIComponent(nivel.toUpperCase())}/grado/${encodeURIComponent(grado)}`;
+      console.log("URL generada:", url);
+
+      try {
+          const response = await fetch(url, {
+              headers: {
+                  "Authorization": "Bearer " + localStorage.getItem("token"),
+                  "Content-Type": "application/json"
+              }
+          });
+
+          if (!response.ok) {
+              throw new Error("Error al cargar cursos");
+          }
+
+          const cursos = await response.json();
+          console.log('Cursos por grado:', cursos);
+          container.innerHTML = "";
+
+          if (!cursos || cursos.length === 0) {
+              container.innerHTML = `
+                  <div class="col-12 text-center p-3 text-muted">
+                      <i class="fas fa-book fa-2x mb-2"></i>
+                      <p>No hay cursos disponibles para este grado.</p>
+                  </div>
+              `;
+              return;
+          }
+
+          cursos.forEach(curso => {
+              const cursoCard = document.createElement("div");
+              cursoCard.classList.add("col-md-6", "mb-3");
+
+              cursoCard.innerHTML = `
+                  <div class="curso-card shadow-sm p-3 rounded">
+                      <div class="form-check">
+                          <input class="form-check-input" type="checkbox" id="curso-${curso.id}" value="${curso.id}"
+                              onchange="actualizarCursosSeleccionados(this)"
+                              data-nombre="${curso.nombre}"
+                              data-profesor="${curso.nombreProfesor || 'Sin asignar'}"
+                              data-modalidad="${curso.modalidad}"
+                              data-horario="${curso.horarioCompleto || 'Sin horario'}"
+                              data-aula="${curso.aula || 'Sin aula'}"
+                              data-matricula="${curso.costoMatricula || 0}"
+                              data-mensualidad="${curso.costoMensualidad || 0}"
+                              data-materiales="${curso.costoMateriales || 0}"
+                          >
+                          <label class="form-check-label fw-bold w-100" for="curso-${curso.id}">
+                              <div class="d-flex justify-content-between align-items-start">
+                                  <div>
+                                      <div>${curso.nombre || "Sin nombre"}</div>
+                                      <small class="text-muted">${curso.creditos || 0} créditos - ${curso.nombreProfesor || 'Sin profesor'}</small>
+                                      <div><small class="text-muted"><i class="fas fa-clock me-1"></i>${curso.horarioCompleto || 'Sin horario'}</small></div>
+                                      <div><small class="text-muted"><i class="fas fa-door-open me-1"></i>Aula ${curso.aula || 'N/A'}</small></div>
+                                  </div>
+                                  <div class="text-end">
+                                      <small class="text-primary fw-bold">S/ ${(parseFloat(curso.costoMatricula || 0) + parseFloat(curso.costoMensualidad || 0) + parseFloat(curso.costoMateriales || 0)).toFixed(2)}</small>
+                                  </div>
+                              </div>
+                          </label>
+                      </div>
+                  </div>
+              `;
+
+              container.appendChild(cursoCard);
+          });
+
+      } catch (error) {
+          console.error("Error cargando cursos:", error);
+          container.innerHTML = `
+              <div class="col-12 alert alert-danger text-center">
+                  <i class="fas fa-exclamation-circle"></i> Error al cargar cursos
+              </div>
+          `;
+      }
+  }
+
+  function actualizarCursosSeleccionados(checkbox) {
+      const cursoId = parseInt(checkbox.value);
+      if (checkbox.checked) {
+          if (!selectedCourses.includes(cursoId)) selectedCourses.push(cursoId);
+      } else {
+          selectedCourses = selectedCourses.filter(id => id !== cursoId);
+      }
+      console.log('Cursos seleccionados:', selectedCourses);
+      actualizarResumenCostos();
+  }
+
+  function actualizarResumenCostos() {
+      let totalMatricula = 0;
+      let totalMensualidad = 0;
+      let totalMateriales = 0;
+
+      selectedCourses.forEach(id => {
+          const checkbox = document.getElementById(`curso-${id}`);
+          if (checkbox) {
+              totalMatricula += parseFloat(checkbox.dataset.matricula) || 0;
+              totalMensualidad += parseFloat(checkbox.dataset.mensualidad) || 0;
+              totalMateriales += parseFloat(checkbox.dataset.materiales) || 0;
+          }
+      });
+
+      const total = totalMatricula + totalMensualidad + totalMateriales;
+
+      document.getElementById('resumenCostos').innerHTML = `
+          <p class="mb-1">Matrícula: <span class="float-end">S/ ${totalMatricula.toFixed(2)}</span></p>
+          <p class="mb-1">Mensualidad: <span class="float-end">S/ ${totalMensualidad.toFixed(2)}</span></p>
+          <p class="mb-1">Materiales: <span class="float-end">S/ ${totalMateriales.toFixed(2)}</span></p>
+          <hr style="border-color: var(--institutional-red);">
+          <h6 style="color: var(--institutional-red);">Total: <span class="float-end">S/ ${total.toFixed(2)}</span></h6>
+      `;
+  }
+
+  async function enviarMatricula() {
+      const form = document.getElementById('matriculaForm');
+      if (!form.checkValidity()) {
+          form.reportValidity();
+          return;
+      }
+
+      if (!selectedStudent || selectedCourses.length === 0) {
+          mostrarError('Por favor, seleccione un estudiante y al menos un curso', 'cursos');
+          return;
+      }
+
+      const anioAcademicoElement = document.getElementById('anioAcademico');
+      const anioAcademicoValue = anioAcademicoElement ? anioAcademicoElement.value.trim() : null;
+
+      if (!anioAcademicoValue) {
+          mostrarError('El año académico es obligatorio', 'toast');
+          return;
+      }
+
+      const btnEnviar = document.getElementById('btnEnviarMatricula');
+      const textoOriginal = btnEnviar.innerHTML;
+      btnEnviar.disabled = true;
+      btnEnviar.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Enviando...';
+
+      try {
+          const matriculaData = {
+              estudianteId: selectedStudent.id,
+              nivelAcademico: document.getElementById('nivelAcademico').value.toUpperCase(),
+              grado: document.getElementById('grado').value,
+              seccion: document.getElementById('seccion').value || null,
+              anioAcademico: anioAcademicoValue,
+              cursosIds: selectedCourses,
+              comentariosApoderado: document.getElementById('comentariosApoderado').value || null
+          };
+
+          console.log('Datos de matrícula a enviar:', matriculaData);
+
+          const token = localStorage.getItem('token');
+          if (!token) {
+              mostrarError('No se encontró un token de acceso. Por favor, inicia sesión nuevamente.', 'toast');
+              cerrarSesion();
+              return;
+          }
+
+          const matriculaResponse = await fetch(`${API_BASE_URL}/matriculas`, {
+              method: 'POST',
+              headers: {
+                  'Authorization': `Bearer ${token}`,
+                  'Content-Type': 'application/json; charset=utf-8'
+              },
+              body: JSON.stringify(matriculaData)
+          });
+
+          if (!matriculaResponse.ok) {
+              const errorData = await matriculaResponse.json().catch(() => ({}));
+              throw new Error(errorData.mensaje || errorData.message || 'Error al crear la matrícula');
+          }
+
+          const matriculaCreada = await matriculaResponse.json();
+          console.log('Matrícula creada:', matriculaCreada);
+
+          bootstrap.Modal.getInstance(document.getElementById('nuevaMatriculaModal')).hide();
+          mostrarNotificacion({ mensaje: 'Matrícula enviada exitosamente. Los costos serán calculados por el administrador.' });
+
+          setTimeout(() => {
+              cargarDashboard();
+          }, 1000);
+
+      } catch (error) {
+          console.error('Error al crear matrícula:', error);
+          mostrarError(`Error al crear la matrícula: ${error.message}`, 'toast');
+      } finally {
+          btnEnviar.disabled = false;
+          btnEnviar.innerHTML = textoOriginal;
+      }
+  }
+
+  function verPagos() {
+      window.location.href = 'pagos.html';
+  }
+
+  function verHorarios() {
+      window.location.href = 'horarios.html';
+  }
+
+  function refrescarEstudiantes() {
+      cargarDashboard();
+  }
+
+  function verDetalleEstudiante(id) {
+      window.location.href = `detalle-estudiante.html?id=${id}`;
+  }
+
+  function nuevaMatriculaEstudiante(id) {
+      const estudiante = dashboardData.estudiantes.find(e => e.id === id);
+      if (estudiante) {
+          selectedStudent = { id, nombre: estudiante.nombreCompleto };
+          document.getElementById('nuevaMatriculaStep1').style.display = 'none';
+          document.getElementById('nuevaMatriculaStep2').style.display = 'block';
+          const modal = new bootstrap.Modal(document.getElementById('nuevaMatriculaModal'));
+          modal.show();
+      }
+  }
+
+  function verCalificacionesEstudiante(id) {
+      window.location.href = `calificaciones.html?estudianteId=${id}`;
+  }
+
+  function editarEstudiante(id) {
+      window.location.href = `editar-estudiante.html?id=${id}`;
+  }
+
+  setInterval(() => {
+      cargarDashboard();
+  }, 30000);
 </script>
 </body>
 </html>

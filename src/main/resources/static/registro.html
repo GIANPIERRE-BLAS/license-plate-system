@@ -336,273 +336,272 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
 <script>
-    const API_BASE_URL = 'http://localhost:8080/api';
+    const API_BASE_URL = `${window.location.origin}/api`;
+  const registerForm = document.getElementById('registerForm');
+  const alertContainer = document.getElementById('alertContainer');
+  const registerButton = registerForm.querySelector('button[type="submit"]');
+  const registerText = registerButton.querySelector('.register-text');
+  const loadingText = registerButton.querySelector('.loading');
+  const passwordInput = document.getElementById('password');
+  const confirmPasswordInput = document.getElementById('confirmPassword');
+  const passwordStrength = document.getElementById('passwordStrength');
 
-    const registerForm = document.getElementById('registerForm');
-    const alertContainer = document.getElementById('alertContainer');
-    const registerButton = registerForm.querySelector('button[type="submit"]');
-    const registerText = registerButton.querySelector('.register-text');
-    const loadingText = registerButton.querySelector('.loading');
-    const passwordInput = document.getElementById('password');
-    const confirmPasswordInput = document.getElementById('confirmPassword');
-    const passwordStrength = document.getElementById('passwordStrength');
+  function showAlert(message, type = 'danger') {
+      const alertDiv = document.createElement('div');
+      alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+      alertDiv.innerHTML = `
+          ${message}
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      `;
 
-    function showAlert(message, type = 'danger') {
-        const alertDiv = document.createElement('div');
-        alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
-        alertDiv.innerHTML = `
-            ${message}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        `;
+      alertContainer.innerHTML = '';
+      alertContainer.appendChild(alertDiv);
 
-        alertContainer.innerHTML = '';
-        alertContainer.appendChild(alertDiv);
+      setTimeout(() => {
+          if (alertDiv.parentNode) {
+              alertDiv.remove();
+          }
+      }, 7000);
+  }
 
-        setTimeout(() => {
-            if (alertDiv.parentNode) {
-                alertDiv.remove();
-            }
-        }, 7000);
-    }
+  function setLoading(loading) {
+      registerButton.disabled = loading;
+      if (loading) {
+          registerText.style.display = 'none';
+          loadingText.style.display = 'inline';
+      } else {
+          registerText.style.display = 'inline';
+          loadingText.style.display = 'none';
+      }
+  }
 
-    function setLoading(loading) {
-        registerButton.disabled = loading;
-        if (loading) {
-            registerText.style.display = 'none';
-            loadingText.style.display = 'inline';
-        } else {
-            registerText.style.display = 'inline';
-            loadingText.style.display = 'none';
-        }
-    }
+  function checkPasswordStrength(password) {
+      let strength = 0;
+      let feedback = '';
 
-    function checkPasswordStrength(password) {
-        let strength = 0;
-        let feedback = '';
+      if (password.length >= 8) strength++;
+      if (/[a-z]/.test(password)) strength++;
+      if (/[A-Z]/.test(password)) strength++;
+      if (/[0-9]/.test(password)) strength++;
+      if (/[^A-Za-z0-9]/.test(password)) strength++;
 
-        if (password.length >= 8) strength++;
-        if (/[a-z]/.test(password)) strength++;
-        if (/[A-Z]/.test(password)) strength++;
-        if (/[0-9]/.test(password)) strength++;
-        if (/[^A-Za-z0-9]/.test(password)) strength++;
+      switch (strength) {
+          case 0:
+          case 1:
+          case 2:
+              feedback = '<span class="strength-weak">Contraseña débil</span>';
+              break;
+          case 3:
+          case 4:
+              feedback = '<span class="strength-medium">Contraseña media</span>';
+              break;
+          case 5:
+              feedback = '<span class="strength-strong">Contraseña fuerte</span>';
+              break;
+      }
 
-        switch (strength) {
-            case 0:
-            case 1:
-            case 2:
-                feedback = '<span class="strength-weak">Contraseña débil</span>';
-                break;
-            case 3:
-            case 4:
-                feedback = '<span class="strength-medium">Contraseña media</span>';
-                break;
-            case 5:
-                feedback = '<span class="strength-strong">Contraseña fuerte</span>';
-                break;
-        }
+      return feedback;
+  }
 
-        return feedback;
-    }
+  passwordInput.addEventListener('input', () => {
+      const password = passwordInput.value;
+      if (password) {
+          passwordStrength.innerHTML = checkPasswordStrength(password);
+      } else {
+          passwordStrength.innerHTML = '';
+      }
+  });
 
-    passwordInput.addEventListener('input', () => {
-        const password = passwordInput.value;
-        if (password) {
-            passwordStrength.innerHTML = checkPasswordStrength(password);
-        } else {
-            passwordStrength.innerHTML = '';
-        }
-    });
+  function validatePasswordMatch() {
+      const password = passwordInput.value;
+      const confirmPassword = confirmPasswordInput.value;
 
-    function validatePasswordMatch() {
-        const password = passwordInput.value;
-        const confirmPassword = confirmPasswordInput.value;
+      if (confirmPassword && password !== confirmPassword) {
+          confirmPasswordInput.setCustomValidity('Las contraseñas no coinciden');
+          return false;
+      } else {
+          confirmPasswordInput.setCustomValidity('');
+          return true;
+      }
+  }
 
-        if (confirmPassword && password !== confirmPassword) {
-            confirmPasswordInput.setCustomValidity('Las contraseñas no coinciden');
-            return false;
-        } else {
-            confirmPasswordInput.setCustomValidity('');
-            return true;
-        }
-    }
+  confirmPasswordInput.addEventListener('input', validatePasswordMatch);
+  passwordInput.addEventListener('input', validatePasswordMatch);
 
-    confirmPasswordInput.addEventListener('input', validatePasswordMatch);
-    passwordInput.addEventListener('input', validatePasswordMatch);
+  registerForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
 
-    registerForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
+      if (!validatePasswordMatch()) {
+          showAlert('Las contraseñas no coinciden.');
+          return;
+      }
 
-        if (!validatePasswordMatch()) {
-            showAlert('Las contraseñas no coinciden.');
-            return;
-        }
+      const formData = new FormData(registerForm);
+      const registerData = {
+          nombre: formData.get('nombre').trim(),
+          email: formData.get('email').trim().toLowerCase(),
+          password: formData.get('password'),
+          telefono: formData.get('telefono')?.trim() || null,
+          direccion: formData.get('direccion')?.trim() || null,
+          tipoDocumento: formData.get('tipoDocumento') || null,
+          numeroDocumento: formData.get('numeroDocumento')?.trim() || null,
+          rol: formData.get('rol')
+      };
 
-        const formData = new FormData(registerForm);
-        const registerData = {
-            nombre: formData.get('nombre').trim(),
-            email: formData.get('email').trim().toLowerCase(),
-            password: formData.get('password'),
-            telefono: formData.get('telefono')?.trim() || null,
-            direccion: formData.get('direccion')?.trim() || null,
-            tipoDocumento: formData.get('tipoDocumento') || null,
-            numeroDocumento: formData.get('numeroDocumento')?.trim() || null,
-            rol: formData.get('rol')
-        };
+      if (!registerData.nombre || !registerData.email || !registerData.password) {
+          showAlert('Por favor, completa todos los campos obligatorios.');
+          return;
+      }
 
-        if (!registerData.nombre || !registerData.email || !registerData.password) {
-            showAlert('Por favor, completa todos los campos obligatorios.');
-            return;
-        }
+      if (registerData.nombre.length < 2) {
+          showAlert('El nombre debe tener al menos 2 caracteres.');
+          return;
+      }
 
-        if (registerData.nombre.length < 2) {
-            showAlert('El nombre debe tener al menos 2 caracteres.');
-            return;
-        }
+      if (registerData.password.length < 6) {
+          showAlert('La contraseña debe tener al menos 6 caracteres.');
+          return;
+      }
 
-        if (registerData.password.length < 6) {
-            showAlert('La contraseña debe tener al menos 6 caracteres.');
-            return;
-        }
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(registerData.email)) {
+          showAlert('Por favor, ingresa un email válido.');
+          return;
+      }
 
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(registerData.email)) {
-            showAlert('Por favor, ingresa un email válido.');
-            return;
-        }
+      try {
+          setLoading(true);
 
-        try {
-            setLoading(true);
+          const response = await fetch(`${API_BASE_URL}/auth/registro`, {
+              method: 'POST',
+              headers: {
+                  'Content-Type': 'application/json',
+              },
+              body: JSON.stringify(registerData)
+          });
 
-            const response = await fetch(`${API_BASE_URL}/auth/registro`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(registerData)
-            });
+          const data = await response.json();
 
-            const data = await response.json();
+          if (response.ok) {
+              showAlert(
+                  `¡Cuenta creada exitosamente! <br>
+                   Bienvenido, ${registerData.nombre}. <br>
+                   Ahora puedes iniciar sesión con tu email y contraseña.`,
+                  'success'
+              );
 
-            if (response.ok) {
-                showAlert(
-                    `¡Cuenta creada exitosamente! <br>
-                     Bienvenido, ${registerData.nombre}. <br>
-                     Ahora puedes iniciar sesión con tu email y contraseña.`,
-                    'success'
-                );
+              registerForm.reset();
+              passwordStrength.innerHTML = '';
 
-                registerForm.reset();
-                passwordStrength.innerHTML = '';
+              setTimeout(() => {
+                  window.location.href = 'login.html';
+              }, 3000);
 
-                setTimeout(() => {
-                    window.location.href = 'login.html';
-                }, 3000);
+          } else {
+              if (data.email && data.email.includes('Ya existe')) {
+                  showAlert('Ya existe una cuenta registrada con este email. <a href="login.html">¿Quieres iniciar sesión?</a>');
+              } else if (typeof data === 'object' && (data.nombre || data.email || data.password)) {
+                  let errorMsg = 'Errores de validación:<br>';
+                  if (data.nombre) errorMsg += `• ${data.nombre}<br>`;
+                  if (data.email) errorMsg += `• ${data.email}<br>`;
+                  if (data.password) errorMsg += `• ${data.password}<br>`;
+                  showAlert(errorMsg);
+              } else if (data.mensaje) {
+                  showAlert(data.mensaje);
+              } else {
+                  showAlert('Error al crear la cuenta. Por favor, intenta de nuevo.');
+              }
+          }
 
-            } else {
-                if (data.email && data.email.includes('Ya existe')) {
-                    showAlert('Ya existe una cuenta registrada con este email. <a href="login.html">¿Quieres iniciar sesión?</a>');
-                } else if (typeof data === 'object' && (data.nombre || data.email || data.password)) {
-                    let errorMsg = 'Errores de validación:<br>';
-                    if (data.nombre) errorMsg += `• ${data.nombre}<br>`;
-                    if (data.email) errorMsg += `• ${data.email}<br>`;
-                    if (data.password) errorMsg += `• ${data.password}<br>`;
-                    showAlert(errorMsg);
-                } else if (data.mensaje) {
-                    showAlert(data.mensaje);
-                } else {
-                    showAlert('Error al crear la cuenta. Por favor, intenta de nuevo.');
-                }
-            }
+      } catch (error) {
+          console.error('Error:', error);
+          showAlert('Error de conexión. Por favor, verifica tu conexión a internet.');
+      } finally {
+          setLoading(false);
+      }
+  });
 
-        } catch (error) {
-            console.error('Error:', error);
-            showAlert('Error de conexión. Por favor, verifica tu conexión a internet.');
-        } finally {
-            setLoading(false);
-        }
-    });
+  window.addEventListener('load', () => {
+      const token = localStorage.getItem('token');
+      const usuario = localStorage.getItem('usuario');
 
-    window.addEventListener('load', () => {
-        const token = localStorage.getItem('token');
-        const usuario = localStorage.getItem('usuario');
+      if (token && usuario) {
+          try {
+              const parsedUsuario = JSON.parse(usuario);
+              showAlert(`Ya tienes una sesión activa como ${parsedUsuario.nombre}. Redirigiendo...`, 'info');
 
-        if (token && usuario) {
-            try {
-                const parsedUsuario = JSON.parse(usuario);
-                showAlert(`Ya tienes una sesión activa como ${parsedUsuario.nombre}. Redirigiendo...`, 'info');
+              setTimeout(() => {
+                  if (parsedUsuario.rol === 'ADMIN') {
+                      window.location.href = 'admin-dashboard.html';
+                  } else {
+                      window.location.href = 'padre-dashboard.html';
+                  }
+              }, 2000);
+          } catch (e) {
+              localStorage.removeItem('token');
+              localStorage.removeItem('usuario');
+          }
+      }
+  });
 
-                setTimeout(() => {
-                    if (parsedUsuario.rol === 'ADMIN') {
-                        window.location.href = 'admin-dashboard.html';
-                    } else {
-                        window.location.href = 'padre-dashboard.html';
-                    }
-                }, 2000);
-            } catch (e) {
-                localStorage.removeItem('token');
-                localStorage.removeItem('usuario');
-            }
-        }
-    });
+  const inputs = ['nombre', 'email', 'password', 'confirmPassword'];
+  inputs.forEach(inputId => {
+      document.getElementById(inputId).addEventListener('input', () => {
+          const existingAlert = alertContainer.querySelector('.alert');
+          if (existingAlert && !existingAlert.classList.contains('alert-success')) {
+              alertContainer.innerHTML = '';
+          }
+      });
+  });
 
-    const inputs = ['nombre', 'email', 'password', 'confirmPassword'];
-    inputs.forEach(inputId => {
-        document.getElementById(inputId).addEventListener('input', () => {
-            const existingAlert = alertContainer.querySelector('.alert');
-            if (existingAlert && !existingAlert.classList.contains('alert-success')) {
-                alertContainer.innerHTML = '';
-            }
-        });
-    });
+  document.getElementById('nombre').addEventListener('input', (e) => {
+      const input = e.target;
+      const words = input.value.split(' ');
+      const formatted = words.map(word => {
+          return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+      }).join(' ');
+      input.value = formatted;
+  });
 
-    document.getElementById('nombre').addEventListener('input', (e) => {
-        const input = e.target;
-        const words = input.value.split(' ');
-        const formatted = words.map(word => {
-            return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
-        }).join(' ');
-        input.value = formatted;
-    });
+  document.getElementById('email').addEventListener('input', (e) => {
+      e.target.value = e.target.value.toLowerCase();
+  });
 
-    document.getElementById('email').addEventListener('input', (e) => {
-        e.target.value = e.target.value.toLowerCase();
-    });
+  function createGoldenParticle() {
+      const particle = document.createElement('div');
+      particle.style.cssText = `
+          position: fixed;
+          width: 4px;
+          height: 4px;
+          background: #FFD700;
+          border-radius: 50%;
+          pointer-events: none;
+          z-index: -1;
+          opacity: 0.7;
+          animation: float 6s linear infinite;
+          left: ${Math.random() * 100}vw;
+          top: 100vh;
+      `;
 
-    function createGoldenParticle() {
-        const particle = document.createElement('div');
-        particle.style.cssText = `
-            position: fixed;
-            width: 4px;
-            height: 4px;
-            background: #FFD700;
-            border-radius: 50%;
-            pointer-events: none;
-            z-index: -1;
-            opacity: 0.7;
-            animation: float 6s linear infinite;
-            left: ${Math.random() * 100}vw;
-            top: 100vh;
-        `;
+      document.body.appendChild(particle);
 
-        document.body.appendChild(particle);
+      setTimeout(() => {
+          particle.remove();
+      }, 6000);
+  }
 
-        setTimeout(() => {
-            particle.remove();
-        }, 6000);
-    }
+  const style = document.createElement('style');
+  style.textContent = `
+      @keyframes float {
+          to {
+              transform: translateY(-100vh) rotate(360deg);
+              opacity: 0;
+          }
+      }
+  `;
+  document.head.appendChild(style);
 
-    const style = document.createElement('style');
-    style.textContent = `
-        @keyframes float {
-            to {
-                transform: translateY(-100vh) rotate(360deg);
-                opacity: 0;
-            }
-        }
-    `;
-    document.head.appendChild(style);
-
-    setInterval(createGoldenParticle, 300);
+  setInterval(createGoldenParticle, 300);
 </script>
 </body>
 </html>
